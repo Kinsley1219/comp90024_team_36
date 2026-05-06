@@ -112,3 +112,5 @@ Scheduled automatic ingestion
 Additional fuel type support
 Sentiment-analysis integration
 Kibana visualization dashboard
+
+Full historical backfill should be run manually once. Fission function is designed for incremental updates using MAX_FILES=1 or 2.

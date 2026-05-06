@@ -35,8 +35,8 @@ def _to_int(value: Optional[str], default: int) -> int:
 def _get_env() -> Dict[str, Any]:
     return {
         "start_year": _to_int(os.getenv("START_YEAR"), 2022),
-        "max_files": _to_int(os.getenv("MAX_FILES"), 0),
-        "es_host": os.getenv("ES_HOST", "https://localhost:9200").rstrip("/"),
+        "max_files": _to_int(os.getenv("MAX_FILES"), 2),
+	"es_host": os.getenv("ES_HOST", "https://elasticsearch-es-http.elastic:9200").rstrip("/"),
         "es_user": os.getenv("ES_USER", "elastic"),
         "es_password": os.getenv("ES_PASSWORD", "elastic"),
         "index_name": os.getenv("INDEX_NAME", DEFAULT_INDEX_NAME),
