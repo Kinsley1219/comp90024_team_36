@@ -1,196 +1,114 @@
-# FuelWatch Backend Pipeline
-
-## Overview
+FuelWatch Backend Pipeline
+Overview
 
 This module implements the FuelWatch backend ingestion pipeline for the COMP90024 group project.
 
 The pipeline:
 
-```text
 FuelWatch WA API
 → Monthly CSV reports
 → Python cleaning & aggregation
-→ Elasticsearch indexing
-```
+→ Elasticsearch bulk indexing
 
 The current implementation focuses on:
 
-* Downloading FuelWatch historical retail fuel data
-* Filtering ULP (Unleaded Petrol) records
-* Aggregating daily average ULP prices
-* Writing processed daily records into Elasticsearch
-
----
-
-# Data Source
+Downloading FuelWatch historical retail fuel data
+Filtering ULP (Unleaded Petrol) records
+Aggregating station-level prices into daily average prices
+Writing processed data into Elasticsearch
+Supporting future Fission serverless deployment
+Data Source
 
 Source:
 
-* FuelWatch Western Australia
-* API endpoint:
+https://www.fuelwatch.wa.gov.au/
 
-```text
+Monthly retail fuel CSV metadata API:
+
 https://www.fuelwatch.wa.gov.au/api/report/monthly-retail-prices
-```
 
-The API returns metadata for monthly CSV fuel reports.
+The pipeline dynamically retrieves available monthly CSV reports and processes data from the configured start year onwards.
 
-Each CSV contains station-level fuel price records.
+Elasticsearch Document Structure
 
----
+Example indexed document:
 
-# Processing Logic
-
-## Filtering
-
-The pipeline currently keeps only:
-
-```text
-PRODUCT_DESCRIPTION = ULP
-```
-
-Other fuel types are ignored.
-
----
-
-## Daily Aggregation
-
-For each date:
-
-* Sum all ULP prices
-* Count the number of valid stations
-* Compute daily average ULP price
-
-Formula:
-
-```text
-avg_ulp_price = total_price / station_count
-```
-
-Malformed rows are skipped automatically.
-
----
-
-# Elasticsearch Schema
-
-Index name (development):
-
-```text
-fuelwatch-dev
-```
-
-Example document:
-
-```json
 {
   "date": "2022-01-01",
   "avg_ulp_price": 169.0,
   "station_count": 682,
   "source": "FuelWatch WA",
   "fuel_type": "ULP",
-  "ingested_at": "2026-05-06T15:33:46Z"
+  "ingested_at": "2026-05-06T16:10:25Z"
 }
-```
 
 Document ID:
 
-```text
-YYYY-MM-DD
-```
+date
 
-Using the date as the document ID prevents duplicate records when the pipeline is rerun.
+This guarantees stable upsert behaviour and avoids duplicate records.
 
----
+Environment Variables
+Variable	Description	Default
+ES_HOST	Elasticsearch endpoint	https://localhost:9200
 
-# Project Structure
+ES_USER	Elasticsearch username	elastic
+ES_PASSWORD	Elasticsearch password	elastic
+INDEX_NAME	Elasticsearch index name	fuelwatch-daily-ulp
+START_YEAR	Earliest year to process	2022
+MAX_FILES	Limit processed monthly files for testing	0
+Local Testing
 
-```text
-backend/
-└── fuelwatch/
-    ├── fuelwatch_fission.py
-    ├── requirements.txt
-    └── README.md
-```
+Run locally:
 
----
-
-# Local Development
-
-## Prerequisites
-
-* WSL2 Ubuntu
-* Python 3
-* kubectl configured
-* Elasticsearch port-forward enabled
-
----
-
-## Start Elasticsearch Port Forward
-
-```bash
-kubectl port-forward -n elastic svc/elasticsearch-es-http 9200:9200
-```
-
----
-
-## Run Locally
-
-```bash
-python3 fuelwatch_fission.py
-```
-
----
-
-## Optional Environment Variables
-
-### Limit number of processed monthly files
-
-Useful during testing:
-
-```bash
-export MAX_FILES=2
-```
-
----
-
-### Change Elasticsearch index
-
-```bash
 export INDEX_NAME="fuelwatch-dev"
-```
+export MAX_FILES=2
 
----
+python3 fuelwatch_fission.py
 
-# Current Development Status
+Run full historical ingestion:
 
-Completed:
+unset MAX_FILES
+python3 fuelwatch_fission.py
+Elasticsearch Validation
 
-* FuelWatch API integration
-* CSV ingestion
-* Daily ULP aggregation
-* Elasticsearch bulk indexing
-* Local end-to-end testing
+Count indexed documents:
 
-Planned:
+curl -k -u elastic:elastic \
+"https://localhost:9200/fuelwatch-dev/_count"
 
-* Fission package deployment
-* Fission function deployment
-* Scheduled timer execution
-* Kibana visualization
-* Integration with social media sentiment analysis
+Query sample documents:
 
----
+curl -k -u elastic:elastic \
+"https://localhost:9200/fuelwatch-dev/_search?size=3&pretty"
+Engineering Features
 
-# Notes
+The current implementation includes several production-style engineering improvements:
 
-* pandas is intentionally avoided to reduce Fission build overhead.
-* Elasticsearch uses HTTPS with a self-signed certificate.
-* The pipeline uses Elasticsearch bulk indexing for efficiency.
+Structured logging
+Retry-safe ingestion workflow
+Stable document IDs
+Elasticsearch bulk indexing
+Explicit Elasticsearch mappings
+Error isolation for corrupted monthly files
+Configurable testing controls via environment variables
+Current Status
 
----
+Current successful local test results:
 
-# Author
+53 monthly files processed
+4,344,768 raw records loaded
+1,586 aggregated daily records indexed
+0 failed files
 
-COMP90024 Team 36 HK_ZHANG
-FuelWatch backend pipeline implementation.
+The pipeline has been validated against the shared COMP90024 Elasticsearch cluster.
 
+Future Work
+
+Planned extensions:
+
+Fission deployment
+Scheduled automatic ingestion
+Additional fuel type support
+Sentiment-analysis integration
+Kibana visualization dashboard
