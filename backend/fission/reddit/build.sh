@@ -1,7 +1,6 @@
 #!/bin/sh
 # COMP90024 Team 36
 # Fission package build script for Reddit harvester
-# Follows the same pattern as teacher's reference implementation
 # SRC_PKG: directory containing source files and requirements.txt
 # DEPLOY_PKG: target directory for the deployment package
 

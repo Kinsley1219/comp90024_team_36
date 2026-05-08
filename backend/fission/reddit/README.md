@@ -275,6 +275,40 @@ fission fn test --name reddit-bootstrap --timeout=600s
 ```
 Expected output: `{"collected":~500,"saved":~500,"mode":"bootstrap","status":"ok"}`
 
+### Step 8: Import historical data via Arctic Shift API (2022-2026)
+
+Arctic Shift is a community-maintained Reddit archive covering 2005 to present.
+This script fetches posts month by month via HTTP API (no download required).
+Run locally before deploying the timer for maximum historical coverage.
+
+Requirements:
+```bash
+pip3 install elasticsearch8 requests --break-system-packages
+```
+
+Make sure ES port-forward is active (Terminal 1):
+```bash
+kubectl port-forward service/elasticsearch-es-http -n elastic 9200:9200
+```
+
+Run the import script from the reddit function directory:
+```bash
+cd backend/fission/reddit
+python3 reddit_history_import.py
+```
+
+Expected output:
+[australia] 2022-01: N saved
+[australia] 2022-02: N saved
+...
+Import complete! Total new posts saved: XXXX
+
+Note:
+- Script queries one month at a time to stay within API rate limits
+- Uses URI as ES document ID so re-running is safe (no duplicates)
+- Covers 2022-01-01 to 2026-02-17 (where bootstrap data begins)
+- reddit_history_import.py is a local script, NOT a Fission function
+
 ## API Endpoints
 
 In a separate terminal, port-forward the Fission router:
@@ -343,7 +377,4 @@ fission spec apply --specdir specs/ --wait
 | Function pod fails to specialize | Check that `__init__.py` exists in the zip; check Python imports |
 | `fission package update` blocked by other functions | Add `--force` flag |
 
-## Future Work
 
-- **Pushshift historical data import:** Download r/australia, r/AusFinance and other subreddit dumps from Academic Torrents (covering 2020-2024), filter for relevance, and bulk-import into the social-posts index for alignment with Bluesky's longer historical coverage.
-- **Index naming standardisation:** Migrate Bluesky data from `bluesky-posts` to the unified `social-posts` index for cross-platform comparative analysis.
