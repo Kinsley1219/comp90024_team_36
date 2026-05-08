@@ -1,0 +1,10 @@
+apiVersion: fission.io/v1
+kind: TimeTrigger
+metadata:
+  name: reddit-timer
+spec:
+  cron: '@every 5m'
+  functionref:
+    functionweights: null
+    name: reddit-harvest
+    type: name
