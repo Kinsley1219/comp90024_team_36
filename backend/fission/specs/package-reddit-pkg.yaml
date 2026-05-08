@@ -1,7 +1,7 @@
 include:
 - reddit.zip
 kind: ArchiveUploadSpec
-name: reddit-zip-zlJk
+name: reddit-zip-vaLw
 
 ---
 apiVersion: fission.io/v1
@@ -18,7 +18,7 @@ spec:
   source:
     checksum: {}
     type: url
-    url: archive://reddit-zip-zlJk
+    url: archive://reddit-zip-vaLw
 status:
   buildstatus: pending
-  lastUpdateTimestamp: "2026-05-08T05:54:28Z"
+  lastUpdateTimestamp: "2026-05-08T12:01:28Z"
