@@ -115,7 +115,8 @@ The Bluesky harvester uses a combination of historical crawling and real-time in
     * Only posts newer than the last collected timestamp are fetched.
 * Raw posts are cleaned and converted into structured Elasticsearch documents.
 * The Bluesky post URI is used as the Elasticsearch document ID to prevent duplicate data.
-* Cursor states are stored in the `bluesky-cursors` index and collected posts are stored in the `bluesky-posts` index.
+* Cursor states are stored in the `bluesky-cursors` index, while collected social media posts are stored in the shared `social-posts` index.
+* The post URI is used as the Elasticsearch document ID to avoid duplicate records when multiple crawlers write to the same index.
 
 This design supports continuous real-time updates while gradually completing historical data collection without exceeding the Fission timeout.
 
@@ -124,8 +125,8 @@ This design supports continuous real-time updates while gradually completing his
 * Successfully deployed as a Fission serverless function on Kubernetes.
 * Connected to Elasticsearch for automatic data storage.
 * Supports both historical backfill and real-time crawling.
-* Timer-based crawling runs automatically every 2 minutes.
-* Data is continuously written into the `bluesky-posts` index.
+* Timer-based crawling runs automatically. The interval was changed from every 2 minutes to a longer interval to avoid Bluesky API rate limits.
+* Data is continuously written into the shared `social-posts` index.
 
 ##### III. Deployment Steps
 #### Step 1. Create Secret 
@@ -133,13 +134,20 @@ This design supports continuous real-time updates while gradually completing his
 ```{bash}
 kubectl create secret generic es-secret \
   --from-literal=BSKY_USER='your_bsky_user' \
-  --from-literal=BSKY_PASS='your_app_password' \
+  --from-literal=BSKY_PASS='your_app_password' \ 
   --from-literal=ES_HOST='https://elasticsearch-es-http.elastic:9200' \
   --from-literal=ES_USER='elastic' \
   --from-literal=ES_PASSWORD='elastic' \
-  --from-literal=INDEX_NAME='bluesky-posts'
+  --from-literal=INDEX_NAME='social-posts'
 ```
 
+  --old version:
+  --from-literal=BSKY_USER='xinyao02.bsky.social' \
+  --from-literal=BSKY_PASS='Lixinyao2002' \
+  --final used: 
+  --from-literal=BSKY_USER='yilin40.bsky.social' \
+  --from-literal=BSKY_PASS='123456789' \
+  
 Optional: Check Secret Yaml
 ```{bash}
 kubectl get secret es-secret -o yaml
@@ -237,12 +245,13 @@ i. Reset cursor only (Recommended for testing)
 curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-cursors
 ```
 
-- This resets the crawler progress only. Existing post data in bluesky-posts will remain.
+- This resets the Bluesky crawler progress only. Existing post data in `social-posts` will remain.
 - Use this when you changed the code and want the crawler to re-run history crawling.
 
 ii. Full reset from scratch
 ```{bash}
-curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-posts
+#(old verssion) curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-posts
+curl -k -u elastic:elastic -X DELETE https://localhost:9200/social-posts
 curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-cursors
 ```
 - This deletes both the stored data and the crawling progress.
@@ -251,11 +260,13 @@ curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-cursors
 #### Step 8. Check Data
 Next time you reopen, just check:
 ```{bash}
-curl -k -u elastic:elastic "https://localhost:9200/bluesky-posts/_count"
+# The total number of data that have been collected and are being written to ES.
+curl -k -u elastic:elastic "https://localhost:9200/social-posts/_count"
+
+# Checks how many Bluesky records have been written into the shared social-posts index.
+curl -k -u elastic:elastic \ "https://localhost:9200/social-posts/_count?q=platform:bluesky"
 ```
 Expected output: {"count":xxx,"_shards":{"total":x,"successful":x,"skipped":x,"failed":x}}.
-
-Meaning: The total number of data that have been collected and are being written to ES.
 
 #### Step 9. Overall Update Deployment
 **If you modify the .py code file, you need to update zip, package, function and re-run the test.**
@@ -303,7 +314,8 @@ fission fn create \
   --fntimeout 120
 
 # 4. Delete the entire Elasticsearch index (clear all data + reset crawler state)
-curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-posts
+# old version : curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-posts
+curl -k -u elastic:elastic -X DELETE https://localhost:9200/social-posts
 curl -k -u elastic:elastic -X DELETE https://localhost:9200/bluesky-cursors
 
 # 5. Simple test. If there are no issues, then use timer
@@ -366,13 +378,30 @@ time fission fn test --name bluesky-harvester --timeout 2m
 
 During deployment, several issues were encountered:
 
-Package stuck in running → caused by heavy dependency (pandas)
+* Package stuck in `running` → caused by heavy dependencies such as `pandas`, which significantly slowed down Fission package builds.
+* Package failed → caused by Python version incompatibility with the default Fission Python 3.7 environment.
+* Function timeout → caused by attempting to crawl large amounts of historical data in a single execution.
+* Bluesky API `429 Too Many Requests` → caused by frequent login requests and short timer intervals.
 
-Package failed → caused by Python version mismatch
+Solutions:
 
-Function timeout → caused by large batch crawling
+* Removed `pandas` from both the crawler logic and `requirements.txt`;
+* Switched to a Python 3.9 Fission environment;
+* Implemented incremental crawling with small query batches and cursor tracking;
+* * Replaced the rate-limited Bluesky account and updated the Kubernetes secret credentials.
 
-Solutions:Removed pandas; Switched to Python 3.9; Implemented incremental crawling with small batches; These improvements made the system stable and compatible with Fission.
+These improvements made the pipeline stable and compatible with Fission serverless execution.
+
+#### V. Index Update Note
+
+The original Bluesky-only index was `bluesky-posts`. It was later changed to the shared index `social-posts` so that Bluesky and Reddit social media data can be stored under the same schema and queried together in Kibana.
+
+To support this shared index design:
+
+* all social media documents include a `platform` field, such as `bluesky` or `reddit`;
+* Bluesky records are queried with `platform:bluesky`;
+* Reddit records are queried with `platform:reddit`;
+* crawler progress is still stored separately in `bluesky-cursors`, because cursor state is only used by the Bluesky crawler.
 
 
 ### 2.2 Official FuelPrice Harvester
@@ -473,7 +502,7 @@ Stack Management → Data Views → Create data view
 **Fill in to see Bluesky data:**
 ```{bash}
 Name: bluesky
-Index pattern: bluesky-posts
+Index pattern: social-posts #(old version bluesky-posts)
 Time field: created_at # or ingested_at
 ```
 
