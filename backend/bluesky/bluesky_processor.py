@@ -63,7 +63,7 @@ def make_doc(post, query):  # Convert raw Bluesky post to structured ES document
     flags = detect_flags(rec.get("text"))
 
     return {
-        "uri": post.get("uri"),
+        "url": post.get("uri"),
         "text": rec.get("text"),
         "author": auth.get("handle"),
         "query": query,

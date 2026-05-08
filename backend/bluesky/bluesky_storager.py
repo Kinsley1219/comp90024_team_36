@@ -38,10 +38,10 @@ def init_all_indexes(es):
             }
         }
     })
-    init_index(es, read_secret("INDEX_NAME", "bluesky-posts"), {
+    init_index(es, read_secret("INDEX_NAME", "social-posts"), {
         "mappings": {
             "properties": {
-                "uri": {"type": "keyword"},
+                "url": {"type": "keyword"},
                 "text": {"type": "text"},
                 "author": {"type": "keyword"},
                 "query": {"type": "keyword"},
@@ -62,13 +62,13 @@ def init_all_indexes(es):
 def save_posts(es, posts):
     ## Save processed posts to Elasticsearch ##
     saved = 0
-    index_name = read_secret("INDEX_NAME", "bluesky-posts")
+    index_name = read_secret("INDEX_NAME", "social-posts")
 
     for doc in posts:
         try:
-            if not doc.get("uri"):
+            if not doc.get("url"):
                 continue
-            es.index(index=index_name, id=doc["uri"], document=doc)
+            es.index(index=index_name, id=doc["url"], document=doc)
             saved += 1
         except Exception as e:
             print("ES index error:", repr(e))
