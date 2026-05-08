@@ -2129,6 +2129,25 @@ git push origin --delete feature/bluesky
 # Check the final branch:
 git branch</code></pre>
 </div>
+<div id="step-6.-update-deployment-guide-files-in-gitlab" class="section level4">
+<h4>Step 6. Update Deployment Guide Files in GitLab</h4>
+<p>After modifying the <code>.Rmd</code> deployment guide locally, the
+updated <code>.Rmd</code> and generated <code>.html</code> files were
+copied into the GitLab repository <code>docs/</code> directory and
+pushed to GitLab.</p>
+<p>Enter the local Git repository:</p>
+<pre class="bash"><code>cd ~/Documents/COMP90024/cccAsm2/git/comp90024_team_36
+# Copy the updated files into docs/:
+cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment\ Guide.Rmd docs/
+cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment-Guide.html docs/
+# Check the updated files:
+ls docs
+# Stage, commit and push the updates:
+git add docs/
+git status
+git commit -m &quot;Update deployment guide docs&quot;
+git push</code></pre>
+</div>
 </div>
 
 

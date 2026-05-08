@@ -623,11 +623,8 @@ Stage and upload the files to GitLab:
 ```{bash}
 git add "CCCA2Deployment Guide.Rmd"
 git add CCCA2Deployment-Guide.html
-
 git status
-
 git commit -m "Add deployment guide report"
-
 git push
 ```
 
@@ -656,4 +653,20 @@ git branch
 ```
 
 
+#### Step 6. Update Deployment Guide Files in GitLab
 
+After modifying the `.Rmd` deployment guide locally, the updated `.Rmd` and generated `.html` files were copied into the GitLab repository `docs/` directory and pushed to GitLab.
+
+Enter the local Git repository:
+```{bash}
+cd ~/Documents/COMP90024/cccAsm2/git/comp90024_team_36
+# Copy the updated files into docs/:
+cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment\ Guide.Rmd docs/
+cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment-Guide.html docs/
+# Check the updated files:
+ls docs
+# Stage, commit and push the updates:
+git add docs/
+git status
+git commit -m "Update deployment guide docs"
+git push
