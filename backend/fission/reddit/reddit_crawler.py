@@ -3,7 +3,11 @@
 # This module handles all data collection from Reddit public JSON API
 
 import requests
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from datetime import datetime, timezone
+
+# Initialise VADER sentiment analyser (shared across all calls for efficiency)
+sentiment_analyzer = SentimentIntensityAnalyzer()
 
 # Query phrases to match against post content - aligned with Bluesky crawler
 QUERIES = [
@@ -44,6 +48,88 @@ AU_LOCATIONS = [
     "fuelwatch", " wa "
 ]
 
+def detect_location(text, subreddit):
+    """
+    Detect the most likely Australian location from post text and subreddit.
+    Uses subreddit as primary signal, then scans post text for city mentions.
+    Returns a location string or 'Unknown' if no location can be determined.
+    """
+    # Primary: infer from subreddit name
+    subreddit_location_map = {
+        "sydney":    "Sydney",
+        "melbourne": "Melbourne",
+        "perth":     "Perth",
+        "brisbane":  "Brisbane",
+        "australia": "Australia",
+        "ausfinance": "Australia"
+    }
+
+    # Check subreddit first (most reliable signal)
+    subreddit_location = subreddit_location_map.get(subreddit.lower())
+
+    # Secondary: scan post text for specific city mentions
+    text_lower = (text or "").lower()
+    text_locations = [
+        ("Sydney",           ["sydney", "nsw", "new south wales"]),
+        ("Melbourne",        ["melbourne", "victoria", " vic "]),
+        ("Perth",            ["perth", "western australia", " wa ", "fuelwatch"]),
+        ("Brisbane",         ["brisbane", "queensland", " qld "]),
+        ("Adelaide",         ["adelaide", "south australia", " sa "]),
+        ("Canberra",         ["canberra", "act", "australian capital territory"]),
+        ("Darwin",           ["darwin", "northern territory", " nt "]),
+        ("Hobart",           ["hobart", "tasmania", " tas "]),
+        ("Australia",        ["australia", "australian"])
+    ]
+
+    # Find most specific text match
+    matched_from_text = None
+    for location, keywords in text_locations:
+        if any(kw in text_lower for kw in keywords):
+            matched_from_text = location
+            break
+
+    # Priority: subreddit location > text location > Unknown
+    if subreddit_location and subreddit_location != "Australia":
+        return subreddit_location
+    elif matched_from_text and matched_from_text != "Australia":
+        return matched_from_text
+    elif subreddit_location == "Australia" or matched_from_text == "Australia":
+        return "Australia"
+    else:
+        return "Unknown"
+
+def calculate_sentiment(text):
+    """
+    Calculate sentiment score using VADER (Valence Aware Dictionary and sEntiment Reasoner).
+    VADER is optimised for social media short texts.
+    
+    Scoring thresholds (standard VADER convention):
+        compound >= 0.05  → positive
+        compound <= -0.05 → negative
+        otherwise         → neutral
+    
+    Returns a dict with sentiment_score (float) and sentiment_label (str).
+    """
+    if not text or not isinstance(text, str):
+        return {
+            "sentiment_score": 0.0,
+            "sentiment_label": "neutral"
+        }
+
+    scores   = sentiment_analyzer.polarity_scores(text)
+    compound = scores["compound"]
+
+    if compound >= 0.05:
+        label = "positive"
+    elif compound <= -0.05:
+        label = "negative"
+    else:
+        label = "neutral"
+
+    return {
+        "sentiment_score": compound,
+        "sentiment_label": label
+    }
 
 def detect_flags(text):
     """
@@ -139,6 +225,8 @@ def make_reddit_doc(item, query, subreddit):
 
     # Detect content category flags
     flags = detect_flags(text)
+    sentiment = calculate_sentiment(text)
+    location = detect_location(text, subreddit)
 
     # Convert Unix timestamp to ISO 8601 format
     created_ts = p.get("created_utc")
@@ -168,7 +256,10 @@ def make_reddit_doc(item, query, subreddit):
         "repost": 0,
         "is_fuel": flags["is_fuel"],
         "is_cost": flags["is_cost"],
-        "is_au": flags["is_au"]
+        "is_au": flags["is_au"],
+        "sentiment_score": sentiment["sentiment_score"],
+        "sentiment_label": sentiment["sentiment_label"],
+        "matched_location": location
     }
 
 
