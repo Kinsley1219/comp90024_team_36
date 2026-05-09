@@ -54,7 +54,10 @@ def init_all_indexes(es):
                 "repost": {"type": "integer"},
                 "is_fuel": {"type": "boolean"},
                 "is_cost": {"type": "boolean"},
-                "is_au": {"type": "boolean"}
+                "is_au": {"type": "boolean"},
+                "sentiment_score": {"type": "float"},
+                "sentiment_label": {"type": "keyword"},
+                "matched_location": {"type": "keyword"}
             }
         }
     })
@@ -63,7 +66,6 @@ def save_posts(es, posts):
     ## Save processed posts to Elasticsearch ##
     saved = 0
     index_name = read_secret("INDEX_NAME", "social-posts")
-
     for doc in posts:
         try:
             if not doc.get("url"):
@@ -72,6 +74,5 @@ def save_posts(es, posts):
             saved += 1
         except Exception as e:
             print("ES index error:", repr(e))
-
     return saved
 

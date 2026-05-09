@@ -1,6 +1,8 @@
 
 import os
 from datetime import datetime, timezone
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+sentiment_analyzer = SentimentIntensityAnalyzer()
 
 ### Bluesky crawler: collect posts by queries, clean, store in Elasticsearch using cursor tracking ###
 EARLIEST_DATE = "2022-01-01T00:00:00Z"
@@ -56,15 +58,51 @@ def detect_flags(text):
             "western australia", "nsw", "victoria", "fuelwatch", " wa "
         ])
     }
+# Emotion analysis score
+def calculate_sentiment(text):
+    if not text or not isinstance(text, str):
+        return {
+            "sentiment_score": 0.0,
+            "sentiment_label": "neutral"
+        }
+    scores = sentiment_analyzer.polarity_scores(text)
+    compound = scores["compound"]
+    if compound >= 0.05:
+        label = "positive"
+    elif compound <= -0.05:
+        label = "negative"
+    else:
+        label = "neutral"
+    return {
+        "sentiment_score": compound,
+        "sentiment_label": label
+    }
+# location for map
+def detect_location(text, query=""):
+    content = f"{text or ''} {query or ''}".lower()
+    locations = {
+        "NSW": ["sydney", "nsw", "new south wales"],
+        "Victoria": ["melbourne", "victoria", "vic"],
+        "WA": ["perth", "western australia", "wa", "fuelwatch"],
+        "Queensland": ["brisbane", "queensland", "qld"],
+        "Australia": ["australia", "australian", "aussie"]
+    }
+    for location, keywords in locations.items():
+        if any(k in content for k in keywords):
+            return location
+    return "Unknown"
 
 def make_doc(post, query):  # Convert raw Bluesky post to structured ES document
     rec = post.get("record", {})
     auth = post.get("author", {})
-    flags = detect_flags(rec.get("text"))
+    text = rec.get("text")
+    flags = detect_flags(text)
+    sentiment = calculate_sentiment(text)
+    matched_location = detect_location(text, query)
 
     return {
         "url": post.get("uri"),
-        "text": rec.get("text"),
+        "text": text,
         "author": auth.get("handle"),
         "query": query,
         "created_at": rec.get("createdAt"),
@@ -76,5 +114,8 @@ def make_doc(post, query):  # Convert raw Bluesky post to structured ES document
         "repost": post.get("repostCount", 0),
         "is_fuel": flags["is_fuel"],
         "is_cost": flags["is_cost"],
-        "is_au": flags["is_au"]
+        "is_au": flags["is_au"],
+        "sentiment_score": sentiment["sentiment_score"],
+        "sentiment_label": sentiment["sentiment_label"],
+        "matched_location": matched_location
     }
