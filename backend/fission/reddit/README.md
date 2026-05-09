@@ -65,12 +65,24 @@ database/
 ## Subreddits Harvested
 
 ```
-r/australia    - General Australian discussion
-r/sydney       - NSW capital
-r/melbourne    - VIC capital
-r/perth        - WA capital (high fuel discussion volume due to FuelWatch)
-r/brisbane     - QLD capital
-r/AusFinance   - Australian personal finance (most cost-of-living content)
+r/australia         - General Australian discussion
+r/sydney            - NSW capital
+r/melbourne         - VIC capital
+r/perth             - WA capital (high fuel discussion volume due to FuelWatch)
+r/brisbane          - QLD capital
+r/AusFinance        - Australian personal finance (most cost-of-living content)
+r/Adelaide          - SA capital
+r/Canberra          - ACT capital
+r/AusEcon           - Australian economics discussion
+r/AusPropertyChat   - Australian property and housing costs
+r/AustralianPolitics - Political discussion including cost-of-living policy
+r/CasualAU          - General Australian casual discussion
+r/australian        - Australian culture and lifestyle
+r/AusUnemployed     - Employment and financial stress discussion
+r/AussiFrugal       - Frugal living and cost-saving in Australia
+r/PersonalFinanceAU - Personal finance and budgeting
+r/AskAustralia      - General questions about life in Australia
+r/AusSocialMedia    - Australian social media discussion
 ```
 
 ## Data Collection Method
@@ -79,11 +91,16 @@ Reddit's official OAuth API requires application registration which has become i
 
 This approach is fully compliant with Reddit's terms of service for public data access. With 6 target subreddits and a 5-minute timer interval, the harvester makes approximately 72 requests per hour, well within the rate limit.
 
-### Limitations
+### Matching Strategy
 
-- Reddit's `.json` endpoint returns at most ~1000 most recent posts per subreddit
-- Cannot access posts older than this via the public API
-- For older historical data (2020+), an offline import from Pushshift archives would be required (planned future work)
+Posts are matched using a three-tier relaxed approach to maximise coverage:
+
+1. **Full phrase match** - Post contains an exact query phrase (e.g. "petrol prices")
+2. **Topic keyword match** - Post contains any fuel/cost-of-living keyword (e.g. "rent", "electricity", "inflation")
+3. **Australian location match** - Post mentions any Australian city or state
+
+This relaxed approach captures broader cost-of-living and fuel discussions across Australian social media, maximising data volume for analytics.
+```
 
 ## Pre-requirements
 
