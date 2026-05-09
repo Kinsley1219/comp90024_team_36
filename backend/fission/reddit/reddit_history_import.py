@@ -9,7 +9,7 @@ import time
 import os
 from datetime import datetime, timezone
 from elasticsearch8 import Elasticsearch
-from reddit_crawler import match_query, detect_flags, SUBREDDITS
+from reddit_crawler import match_query, detect_flags, calculate_sentiment, detect_location, SUBREDDITS
 
 # Arctic Shift API endpoint
 ARCTIC_SHIFT_URL = "https://arctic-shift.photon-reddit.com/api/posts/search"
@@ -19,8 +19,9 @@ INDEX_NAME = "social-posts"
 
 # Date range as Unix timestamps
 # 2022-01-01 00:00:00 UTC = 1640995200
+# 2025-02-17 00:00:00 UTC = 1739750400 (fill the gap)
 # 2026-02-17 00:00:00 UTC = 1771286400 (where our bootstrap data starts)
-START_TS = 1739750400   # 2025-02-17 00:00:00 UTC (fill the gap)
+START_TS = 1640995200   # 2022-01-01 00:00:00 UTC = 1640995200
 END_TS   = 1771286400   # 2026-02-17 00:00:00 UTC (correct)
 
 # Number of posts per API request (max 100)
@@ -92,6 +93,8 @@ def convert_arctic_post(post, query, subreddit):
 
     # Use same flag detection as realtime crawler
     flags = detect_flags(text)
+    sentiment = calculate_sentiment(text)
+    location  = detect_location(text, subreddit)
 
     # Convert Unix timestamp to ISO 8601
     created_ts = post.get("created_utc")
@@ -121,7 +124,10 @@ def convert_arctic_post(post, query, subreddit):
         "repost":      0,
         "is_fuel":     flags["is_fuel"],
         "is_cost":     flags["is_cost"],
-        "is_au":       flags["is_au"]
+        "is_au":       flags["is_au"],
+        "sentiment_score": sentiment["sentiment_score"],
+        "sentiment_label": sentiment["sentiment_label"],
+        "matched_location": location
     }
 
 def import_subreddit_history(es, subreddit, start_ts, end_ts):

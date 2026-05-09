@@ -351,6 +351,78 @@ Useful KQL filters in Discover:
 - `subreddit : "perth"` - only Perth subreddit
 - `query : "petrol Australia"` - posts matching specific keyword
 
+## Sentiment Analysis
+
+This harvester integrates VADER (Valence Aware Dictionary and sEntiment Reasoner)
+sentiment analysis into all Reddit posts at ingestion time.
+
+### Why VADER?
+
+VADER is specifically designed for social media short texts and requires no training data or model downloads. 
+
+ Key advantages:
+- Works well with informal language, slang, and punctuation emphasis
+- No GPU or model training required
+- Fast enough to run inline during data ingestion
+- Compound score range: -1.0 (most negative) to +1.0 (most positive)
+
+### Scoring Thresholds
+
+Following standard VADER convention (aligned with teammate Bluesky implementation):
+
+| Compound Score | Label |
+|----------------|-------|
+| >= 0.05 | positive |
+| <= -0.05 | negative |
+| between -0.05 and 0.05 | neutral |
+
+### Fields Added to ElasticSearch
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sentiment_score` | float | VADER compound score (-1.0 to 1.0) |
+| `sentiment_label` | keyword | positive / negative / neutral |
+
+### Limitations
+
+- VADER struggles with sarcasm (e.g. "Great, another petrol price rise!") may be scored as positive due to the word "Great"
+- Long posts may dilute sentiment signals from key sentences
+- Australian slang may not be fully captured in VADER lexicon
+
+## Location Detection
+
+Each Reddit post is assigned a `matched_location` field indicating the most
+likely Australian location associated with the post.
+
+### Detection Logic
+
+Location is inferred using a two-stage approach:
+
+1. **Subreddit-based detection (primary signal)**
+   - r/sydney → Sydney
+   - r/melbourne → Melbourne
+   - r/perth → Perth
+   - r/brisbane → Brisbane
+   - r/australia → Australia
+   - r/AusFinance → Australia
+
+2. **Text-based detection (secondary signal)**
+   - Scans post title and body for city/state name mentions
+   - Covers: Sydney, Melbourne, Perth, Brisbane, Adelaide, Canberra, Darwin, Hobart
+   - State abbreviations included: NSW, VIC, WA, QLD, SA, ACT, NT, TAS
+
+### Priority Rules
+Specific subreddit location (e.g. Perth) → highest priority
+Specific text mention (e.g. "Adelaide")  → second priority
+Generic "Australia" mention              → fallback
+Unknown                                  → no location signal found
+
+### Field Added to ElasticSearch
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `matched_location` | keyword | Detected location or "Unknown" |
+
 ## Implementation Notes
 
 - ElasticSearch document ID is set to the post URI to prevent duplicates.
