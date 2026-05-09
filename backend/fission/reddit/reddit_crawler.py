@@ -25,7 +25,13 @@ QUERIES = [
 ]
 
 # Australian subreddits to harvest from
-SUBREDDITS = ["australia", "sydney", "melbourne", "perth", "brisbane", "AusFinance"]
+SUBREDDITS = [
+    "australia", "sydney", "melbourne", "perth", "brisbane", "AusFinance",
+    "Adelaide", "Canberra", "AusEcon", "AusPropertyChat",
+    "AustralianPolitics", "CasualAU", "australian",
+    "AusUnemployed", "AustralianMemes", "AussieFrugal",
+    "PersonalFinanceAU", "AskAustralia", "AusSocialMedia"
+]
 
 # Topic keywords - a post must contain at least one to be considered relevant
 # These prevent false positives where a location word alone (e.g. "Victoria")
@@ -153,37 +159,32 @@ def detect_flags(text):
 
 def match_query(text, queries=QUERIES):
     """
-    Match post text against query list with strict relevance rules.
-    A post must:
-    1. Contain at least one TOPIC keyword (fuel, cost-of-living, rent, etc.)
-    2. AND either be fully matched as a phrase, OR mention an Australian location
-
-    This avoids false positives like "Victoria Cross medals" matching
-    the query "cost of living Victoria" via word collision.
+    Match post text against query list.
+    Relaxed matching to maximise data collection volume:
+    - Full phrase match (highest confidence)
+    - Topic keyword only (no location required)
+    - Australian location mention only (no topic required)
+    This captures broader cost-of-living and fuel discussions
+    on Australian social media platforms.
     """
     text = (text or "").lower()
 
-    # Rule 1: Post must contain at least one topic keyword
-    has_topic = any(topic in text for topic in TOPIC_KEYWORDS)
-    if not has_topic:
-        return None
-
-    # Rule 2: Try full phrase match first (most reliable)
+    # Rule 1: Direct full phrase match (highest confidence)
     for q in queries:
         if q.lower() in text:
             return q
 
-    # Rule 3: Topic + AU location combination - all words from a query must be present
-    has_au = any(loc in text for loc in AU_LOCATIONS)
-    if has_au:
-        for q in queries:
-            words = q.lower().split()
-            if all(w in text for w in words):
-                return q
-        # Fallback: post has both topic and AU mention but no exact query match
+    # Rule 2: Has any topic keyword - fuel/cost related
+    has_topic = any(topic in text for topic in TOPIC_KEYWORDS)
+    if has_topic:
         for topic in TOPIC_KEYWORDS:
             if topic in text:
                 return f"{topic} Australia"
+
+    # Rule 3: Has Australian location mention
+    has_au = any(loc in text for loc in AU_LOCATIONS)
+    if has_au:
+        return "australia general"
 
     return None
 
