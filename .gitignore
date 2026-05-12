@@ -1,1 +1,16 @@
+# Fission packaging files
 *.zip
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE configuration
+.idea/
+.vscode/
+
+# macOS system files
+.DS_Store
+
+config.*.yaml

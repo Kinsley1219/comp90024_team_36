@@ -1,0 +1,29 @@
+apiVersion: fission.io/v1
+kind: Environment
+metadata:
+  name: python-39
+spec:
+  builder:
+    command: build
+    container:
+      name: builder
+      resources: {}
+    image: fission/python-builder-3.9
+    podspec:
+      containers:
+      - name: builder
+        resources: {}
+  imagepullsecret: ""
+  keeparchive: false
+  poolsize: 3
+  resources: {}
+  runtime:
+    container:
+      name: python-39
+      resources: {}
+    image: fission/python-env-3.9
+    podspec:
+      containers:
+      - name: python-39
+        resources: {}
+  version: 3

@@ -1,0 +1,64 @@
+# COMP90024 Team 36 - CI/CD Pipeline
+
+stages:
+  - test
+  - deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip/
+
+test:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install pytest
+  script:
+    - echo "Running tests..."
+    - pytest test/ -v
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+deploy:
+  stage: deploy
+  image: python:3.11-slim
+  before_script:
+    # Set up kubeconfig
+    - mkdir -p ~/.kube
+    - echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
+    # Install system dependencies
+    - apt-get update -qq && apt-get install -y -qq curl zip
+    # Install kubectl
+    - curl -sLO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+    - chmod +x kubectl && mv kubectl /usr/local/bin/
+    # Install fission CLI
+    - curl -sLo fission https://github.com/fission/fission/releases/download/v1.20.1/fission-v1.20.1-linux-amd64
+    - chmod +x fission && mv fission /usr/local/bin/
+    # Verify cluster connection
+    - kubectl get nodes
+  script:
+    # Build reddit zip package (output directly to backend/fission/reddit.zip)
+    - echo "=== Building reddit package ==="
+    - cd backend/fission/reddit && zip -r ../reddit.zip . && cd ../../..
+    # Update package with -f flag
+    - echo "=== Updating reddit fission package ==="
+    - fission package update --name reddit-pkg --sourcearchive backend/fission/reddit.zip --buildcmd "./build.sh" -f
+    # Wait for build
+    - echo "=== Waiting for package build ==="
+    - sleep 15
+    - fission package info --name reddit-pkg
+    # Update functions
+    - echo "=== Updating reddit functions ==="
+    - fission fn update -f --name reddit-harvest --pkg reddit-pkg --entrypoint "reddit_harvest.main"
+    - fission fn update -f --name reddit-api --pkg reddit-pkg --entrypoint "reddit_api.main"
+    - fission fn update -f --name reddit-bootstrap --pkg reddit-pkg --entrypoint "reddit_bootstrap.main"
+    - echo "=== Deployment complete ==="
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+  needs:
+    - test
