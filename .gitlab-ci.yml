@@ -1,8 +1,8 @@
 # COMP90024 Team 36 - CI/CD Pipeline
-# Author: Eclair
 
 stages:
   - test
+  - deploy
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -22,3 +22,30 @@ test:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+deploy:
+  stage: deploy
+  image: python:3.11-slim
+  when: manual
+  before_script:
+    # Set up kubeconfig
+    - mkdir -p ~/.kube
+    - echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
+    # Install system dependencies
+    - apt-get update -qq && apt-get install -y -qq curl zip
+    # Install kubectl
+    - curl -sLO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+    - chmod +x kubectl && mv kubectl /usr/local/bin/
+    # Install fission CLI
+    - curl -sLo fission https://github.com/fission/fission/releases/download/v1.20.1/fission-v1.20.1-linux-amd64
+    - chmod +x fission && mv fission /usr/local/bin/
+    # Verify cluster connection
+    - kubectl get nodes
+  script:
+    - echo "Deploying Reddit functions..."
+    - bash backend/fission/reddit/deploy.sh
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+  needs:
+    - test
