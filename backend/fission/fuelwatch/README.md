@@ -1,37 +1,96 @@
-FuelWatch Backend Pipeline
-Overview
+# FuelWatch Backend Pipeline
 
-This module implements the FuelWatch backend ingestion pipeline for the COMP90024 group project.
+## Overview
 
-The pipeline:
+This module implements the complete FuelWatch backend ingestion and aggregation pipeline for the COMP90024 cloud computing group project.
+
+The pipeline provides:
 
 FuelWatch WA API
-→ Monthly CSV reports
-→ Python cleaning & aggregation
-→ Elasticsearch bulk indexing
+    ↓
+Monthly retail fuel CSV reports
+    ↓
+Raw ingestion pipeline
+    ↓
+Elasticsearch raw storage
+    ↓
+ULP filtering & aggregation
+    ↓
+Daily analytics dataset
 
-The current implementation focuses on:
+The implementation follows a production-style cloud data engineering architecture with:
 
-Downloading FuelWatch historical retail fuel data
-Filtering ULP (Unleaded Petrol) records
-Aggregating station-level prices into daily average prices
-Writing processed data into Elasticsearch
-Supporting future Fission serverless deployment
-Data Source
+- Raw data persistence
+- Incremental ingestion
+- Historical backfill support
+- Elasticsearch bulk indexing
+- Serverless execution via Fission
+- Automated scheduled updates
+- Aggregated analytical datasets
 
-Source:
+# Data Source
+
+Official FuelWatch WA API:
 
 https://www.fuelwatch.wa.gov.au/
 
-Monthly retail fuel CSV metadata API:
+Monthly retail fuel metadata API:
 
 https://www.fuelwatch.wa.gov.au/api/report/monthly-retail-prices
 
-The pipeline dynamically retrieves available monthly CSV reports and processes data from the configured start year onwards.
+The pipeline dynamically retrieves available monthly CSV reports and processes all files from the configured START_YEAR.
 
-Elasticsearch Document Structure
+# Pipeline Architecture
 
-Example indexed document:
+## Stage 1 — Raw Data Ingestion
+
+Function:
+
+fuelwatch-raw
+
+Purpose:
+
+- Download monthly FuelWatch CSV files
+- Normalize raw records
+- Persist complete raw datasets into Elasticsearch
+
+Target index:
+
+fuelwatch-raw
+
+Characteristics:
+
+- Historical backfill supported
+- Incremental ingestion supported
+- Retry-safe ingestion
+- Stable document IDs
+- Elasticsearch bulk indexing
+
+## Stage 2 — Daily ULP Aggregation
+
+Function:
+
+fuelwatch-dev
+
+Purpose:
+
+- Read FuelWatch raw records
+- Filter ULP fuel type
+- Aggregate station-level prices into daily average prices
+- Generate analytics-ready daily dataset
+
+Target index:
+
+fuelwatch-daily-ulp
+
+# Elasticsearch Indices
+
+| Index | Purpose |
+|---|---|
+| fuelwatch-raw | Full raw FuelWatch records |
+| fuelwatch-daily-ulp | Aggregated daily ULP analytics dataset |
+
+# Example Aggregated Document
 
 {
   "date": "2022-01-01",
@@ -46,71 +105,118 @@ Document ID:
 
 date
 
-This guarantees stable upsert behaviour and avoids duplicate records.
+This guarantees deterministic upsert behaviour and prevents duplicate daily records.
 
-Environment Variables
-Variable	Description	Default
-ES_HOST	Elasticsearch endpoint	https://localhost:9200
+# Environment Variables
 
-ES_USER	Elasticsearch username	elastic
-ES_PASSWORD	Elasticsearch password	elastic
-INDEX_NAME	Elasticsearch index name	fuelwatch-daily-ulp
-START_YEAR	Earliest year to process	2022
-MAX_FILES	Limit processed monthly files for testing	0
-Local Testing
+| Variable | Description | Default |
+|---|---|---|
+| ES_HOST | Elasticsearch endpoint | https://localhost:9200 |
+| ES_USER | Elasticsearch username | elastic |
+| ES_PASSWORD | Elasticsearch password | elastic |
+| INDEX_NAME | Aggregated Elasticsearch index | fuelwatch-daily-ulp |
+| RAW_INDEX_NAME | Raw Elasticsearch index | fuelwatch-raw |
+| START_YEAR | Earliest year to process | 2022 |
+| MAX_FILES | Limit monthly files for testing | 1 |
+| BULK_BATCH_SIZE | Elasticsearch bulk batch size | 1000 |
 
-Run locally:
+# Local Testing
 
-export INDEX_NAME="fuelwatch-dev"
-export MAX_FILES=2
+## Test Raw Ingestion
 
-python3 fuelwatch_fission.py
+export ES_HOST="https://localhost:9200"
+export ES_USER="elastic"
+export ES_PASSWORD="elastic"
 
-Run full historical ingestion:
+export MAX_FILES=1
+
+python3 fuelwatch_raw_ingestion.py
+
+## Full Historical Backfill
 
 unset MAX_FILES
+
+python3 fuelwatch_raw_ingestion.py
+
+## Test Daily Aggregation
+
 python3 fuelwatch_fission.py
-Elasticsearch Validation
 
-Count indexed documents:
+# Elasticsearch Validation
 
-curl -k -u elastic:elastic \
-"https://localhost:9200/fuelwatch-dev/_count"
-
-Query sample documents:
+## Count Raw Records
 
 curl -k -u elastic:elastic \
-"https://localhost:9200/fuelwatch-dev/_search?size=3&pretty"
-Engineering Features
+"https://localhost:9200/fuelwatch-raw/_count"
 
-The current implementation includes several production-style engineering improvements:
+## Count Aggregated Records
 
-Structured logging
-Retry-safe ingestion workflow
-Stable document IDs
-Elasticsearch bulk indexing
-Explicit Elasticsearch mappings
-Error isolation for corrupted monthly files
-Configurable testing controls via environment variables
-Current Status
+curl -k -u elastic:elastic \
+"https://localhost:9200/fuelwatch-daily-ulp/_count"
 
-Current successful local test results:
+# Fission Deployment
 
-53 monthly files processed
-4,344,768 raw records loaded
-1,586 aggregated daily records indexed
-0 failed files
+## Raw Ingestion Function
 
-The pipeline has been validated against the shared COMP90024 Elasticsearch cluster.
+fission function create \
+  --name fuelwatch-raw \
+  --env python39 \
+  --pkg fuelwatch-raw-pkg \
+  --entrypoint "fuelwatch_raw_ingestion.main"
 
-Future Work
+## Aggregation Function
 
-Planned extensions:
+fission function create \
+  --name fuelwatch-dev \
+  --env python39 \
+  --pkg fuelwatch-dev-pkg \
+  --entrypoint "fuelwatch_fission.main"
 
-Fission deployment
-Scheduled automatic ingestion
-Additional fuel type support
-Sentiment-analysis integration
-Kibana visualization dashboard
+# Automated Scheduled Pipelines
 
-Full historical backfill should be run manually once. Fission function is designed for incremental updates using MAX_FILES=1 or 2.
+## Raw Data Timer
+
+fission timer create \
+  --name fuelwatch-raw-timer \
+  --function fuelwatch-raw \
+  --cron "0 2 * * *"
+
+Runs daily incremental raw ingestion.
+
+## Aggregation Timer
+
+fission timer create \
+  --name fuelwatch-dev-timer \
+  --function fuelwatch-dev \
+  --cron "0 3 * * *"
+
+Runs daily aggregation after raw ingestion completes.
+
+# Engineering Features
+
+The implementation includes several production-oriented engineering improvements:
+
+- Structured logging
+- Retry-safe ingestion workflow
+- Stable Elasticsearch document IDs
+- Elasticsearch bulk indexing
+- Incremental ingestion support
+- Historical backfill support
+- Batch-size optimization
+- Error isolation for corrupted monthly files
+- Configurable testing controls
+- Fission serverless deployment
+- Automated scheduled pipelines
+
+# Current Status
+
+Successfully validated on the shared COMP90024 Elasticsearch cluster.
+
+Current successful historical backfill results:
+
+| Metric | Value |
+|---|---|
+| Monthly files processed | 53 |
+| Raw records indexed | 4,354,746 |
+| Aggregated daily records | 1,586 |
+| Failed files | 0 |
