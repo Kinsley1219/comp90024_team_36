@@ -1,15 +1,16 @@
-# Python cache (automatically generated at runtime)
+# Fission packaging files
+*.zip
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 
-# IDE configuration file
+# IDE configuration
 .idea/
 .vscode/
 
-# Fission packaging file (for local packaging only, no need to upload)
-*.zip
-
 # macOS system files
 .DS_Store
+
 config.*.yaml
