@@ -1,0 +1,24 @@
+# COMP90024 Team 36 - CI/CD Pipeline
+# Author: Eclair
+
+stages:
+  - test
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip/
+
+test:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install pytest
+  script:
+    - echo "Running tests..."
+    - pytest test/ -v
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
