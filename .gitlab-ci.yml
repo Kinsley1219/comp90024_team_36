@@ -41,10 +41,10 @@ deploy:
     # Verify cluster connection
     - kubectl get nodes
   script:
-    # Build reddit zip package
+    # Build reddit zip package (output directly to backend/fission/reddit.zip)
     - echo "=== Building reddit package ==="
-    - cd backend/fission/reddit && zip -r reddit.zip . && mv reddit.zip ../../ && cd ../../..
-    # Update package with -f flag (force update even if used by multiple functions)
+    - cd backend/fission/reddit && zip -r ../reddit.zip . && cd ../../..
+    # Update package with -f flag
     - echo "=== Updating reddit fission package ==="
     - fission package update --name reddit-pkg --sourcearchive backend/fission/reddit.zip --buildcmd "./build.sh" -f
     # Wait for build
