@@ -53,9 +53,9 @@ deploy:
     - fission package info --name reddit-pkg
     # Update functions
     - echo "=== Updating reddit functions ==="
-    - fission fn update --name reddit-harvest --pkg reddit-pkg --entrypoint "reddit_harvest.main"
-    - fission fn update --name reddit-api --pkg reddit-pkg --entrypoint "reddit_api.main"
-    - fission fn update --name reddit-bootstrap --pkg reddit-pkg --entrypoint "reddit_bootstrap.main"
+    - fission fn update -f --name reddit-harvest --pkg reddit-pkg --entrypoint "reddit_harvest.main"
+    - fission fn update -f --name reddit-api --pkg reddit-pkg --entrypoint "reddit_api.main"
+    - fission fn update -f --name reddit-bootstrap --pkg reddit-pkg --entrypoint "reddit_bootstrap.main"
     - echo "=== Deployment complete ==="
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
