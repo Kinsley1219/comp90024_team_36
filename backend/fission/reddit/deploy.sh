@@ -33,11 +33,13 @@ fission package create \
   --sourcearchive backend/fission/reddit.zip \
   --env ${ENV_NAME} \
   --buildcmd "./build.sh" \
+  --force \
   2>/dev/null || \
 fission package update \
   --name ${PKG_NAME} \
   --sourcearchive backend/fission/reddit.zip \
-  --buildcmd "./build.sh"
+  --buildcmd "./build.sh" \
+  --force
 
 echo "=== Step 4: Waiting for package build to complete ==="
 sleep 10
