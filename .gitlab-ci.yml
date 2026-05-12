@@ -26,7 +26,6 @@ test:
 deploy:
   stage: deploy
   image: python:3.11-slim
-  when: manual
   before_script:
     # Set up kubeconfig
     - mkdir -p ~/.kube
@@ -42,8 +41,22 @@ deploy:
     # Verify cluster connection
     - kubectl get nodes
   script:
-    - echo "Deploying Reddit functions..."
-    - bash backend/fission/reddit/deploy.sh
+    # Build reddit zip package
+    - echo "=== Building reddit package ==="
+    - cd backend/fission/reddit && zip -r reddit.zip . && mv reddit.zip ../../ && cd ../../..
+    # Update package with -f flag (force update even if used by multiple functions)
+    - echo "=== Updating reddit fission package ==="
+    - fission package update --name reddit-pkg --sourcearchive backend/fission/reddit.zip --buildcmd "./build.sh" -f
+    # Wait for build
+    - echo "=== Waiting for package build ==="
+    - sleep 15
+    - fission package info --name reddit-pkg
+    # Update functions
+    - echo "=== Updating reddit functions ==="
+    - fission fn update --name reddit-harvest --pkg reddit-pkg --entrypoint "reddit_harvest.main"
+    - fission fn update --name reddit-api --pkg reddit-pkg --entrypoint "reddit_api.main"
+    - fission fn update --name reddit-bootstrap --pkg reddit-pkg --entrypoint "reddit_bootstrap.main"
+    - echo "=== Deployment complete ==="
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
