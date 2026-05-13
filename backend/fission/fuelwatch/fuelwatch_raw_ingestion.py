@@ -75,6 +75,16 @@ def extract_year_from_filename(file_name: str) -> Optional[int]:
     except (AttributeError, ValueError):
         return None
 
+def extract_year_month_from_filename(file_name: str):
+    try:
+        # FuelWatchRetail-05-2026.csv
+        name = file_name.replace(".csv", "")
+        parts = name.split("-")
+        month = int(parts[-2])
+        year = int(parts[-1])
+        return year, month
+    except Exception:
+        return 0, 0
 
 def fetch_monthly_reports(config: Dict[str, Any]) -> List[Dict[str, Any]]:
     log("Fetching FuelWatch monthly report metadata")
@@ -96,7 +106,7 @@ def fetch_monthly_reports(config: Dict[str, Any]) -> List[Dict[str, Any]]:
         if year is not None and year >= config["start_year"] and item.get("url"):
             selected.append(item)
 
-    selected = sorted(selected, key=lambda x: x.get("fileName", ""), reverse=True)
+    selected = sorted(selected, key=lambda x: extract_year_month_from_filename(x.get("fileName", "")), reverse=True)
 
     if config["max_files"] > 0:
         selected = selected[: config["max_files"]]
