@@ -1616,8 +1616,161 @@ limits.</li>
 <code>social-posts</code> index.</li>
 </ul>
 </div>
-<div id="iii.-deployment-steps" class="section level5">
-<h5>III. Deployment Steps</h5>
+<div id="iii.-bluesky-dataset-fields" class="section level5">
+<h5>III. Bluesky Dataset Fields</h5>
+<p>The processed Bluesky dataset contains both original post attributes
+and additional analytical features generated during preprocessing.</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>url</code></td>
+<td>string</td>
+<td>Unique URI of the Bluesky post and Elasticsearch document ID</td>
+</tr>
+<tr class="even">
+<td><code>text</code></td>
+<td>text</td>
+<td>Main textual content of the post</td>
+</tr>
+<tr class="odd">
+<td><code>author</code></td>
+<td>string</td>
+<td>Bluesky user handle</td>
+</tr>
+<tr class="even">
+<td><code>query</code></td>
+<td>string</td>
+<td>Search keyword used during crawling</td>
+</tr>
+<tr class="odd">
+<td><code>created_at</code></td>
+<td>datetime</td>
+<td>Original post creation timestamp</td>
+</tr>
+<tr class="even">
+<td><code>date</code></td>
+<td>date</td>
+<td>Extracted date used for aggregation</td>
+</tr>
+<tr class="odd">
+<td><code>platform</code></td>
+<td>string</td>
+<td>Source platform identifier (<code>bluesky</code>)</td>
+</tr>
+<tr class="even">
+<td><code>ingested_at</code></td>
+<td>datetime</td>
+<td>Elasticsearch ingestion timestamp</td>
+</tr>
+<tr class="odd">
+<td><code>like</code></td>
+<td>integer</td>
+<td>Number of likes</td>
+</tr>
+<tr class="even">
+<td><code>reply</code></td>
+<td>integer</td>
+<td>Number of replies</td>
+</tr>
+<tr class="odd">
+<td><code>repost</code></td>
+<td>integer</td>
+<td>Number of reposts</td>
+</tr>
+<tr class="even">
+<td><code>is_fuel</code></td>
+<td>boolean</td>
+<td>Fuel-topic indicator</td>
+</tr>
+<tr class="odd">
+<td><code>is_cost</code></td>
+<td>boolean</td>
+<td>Cost-of-living topic indicator</td>
+</tr>
+<tr class="even">
+<td><code>is_au</code></td>
+<td>boolean</td>
+<td>Australia-related indicator</td>
+</tr>
+<tr class="odd">
+<td><code>sentiment_score</code></td>
+<td>float</td>
+<td>VADER sentiment score</td>
+</tr>
+<tr class="even">
+<td><code>sentiment_label</code></td>
+<td>string</td>
+<td>Sentiment category</td>
+</tr>
+<tr class="odd">
+<td><code>matched_location</code></td>
+<td>string</td>
+<td>Detected Australian region</td>
+</tr>
+</tbody>
+</table>
+<p>Additional engineered features were generated during preprocessing to
+support downstream analysis and dashboard visualisation.</p>
+<table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Engineered Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>sentiment_score</code></td>
+<td>Continuous VADER compound sentiment score ranging from
+<code>-1</code> to <code>1</code></td>
+</tr>
+<tr class="even">
+<td><code>sentiment_label</code></td>
+<td>Sentiment category derived from the sentiment score
+(<code>positive</code>, <code>neutral</code>,
+<code>negative</code>)</td>
+</tr>
+<tr class="odd">
+<td><code>matched_location</code></td>
+<td>Australian state or region inferred using keyword-based location
+matching</td>
+</tr>
+<tr class="even">
+<td><code>is_fuel</code></td>
+<td>Boolean indicator showing whether the post is related to fuel or
+petrol topics</td>
+</tr>
+<tr class="odd">
+<td><code>is_cost</code></td>
+<td>Boolean indicator showing whether the post is related to
+cost-of-living topics</td>
+</tr>
+<tr class="even">
+<td><code>is_au</code></td>
+<td>Boolean indicator showing whether the post is related to
+Australia</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="iv.-deployment-steps" class="section level5">
+<h5>IV. Deployment Steps</h5>
 </div>
 <div id="step-1.-create-secret" class="section level4">
 <h4>Step 1. Create Secret</h4>
@@ -2069,23 +2222,20 @@ cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/requirements.txt backend/b
 cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/bluesky_harvester.py backend/bluesky/
 cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/bluesky_processor.py backend/bluesky/
 cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/bluesky_storager.py backend/bluesky/
-cp -R ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/specs .
+cp -R ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/specs backend/bluesky/
 
 # Check whether the files were copied successfully
 ls backend/bluesky
-ls specs</code></pre>
+ls backend/bluesky/specs</code></pre>
 </div>
 <div id="step4.-commit-and-push-to-gitlab" class="section level4">
 <h4>Step4. Commit and Push to GitLab</h4>
 <pre class="bash"><code># Stage all files
-git add .
-
+git add backend/bluesky
 # Check the files before committing
 git status
-
 # Commit the changes
 git commit -m &quot;Add Bluesky backend pipeline&quot;
-
 git push origin feature/bluesky</code></pre>
 </div>
 <div id="step5.-upload-the-r-markdown-and-html-files" class="section level4">
@@ -2101,11 +2251,8 @@ ls</code></pre>
 <p>Stage and upload the files to GitLab:</p>
 <pre class="bash"><code>git add &quot;CCCA2Deployment Guide.Rmd&quot;
 git add CCCA2Deployment-Guide.html
-
 git status
-
 git commit -m &quot;Add deployment guide report&quot;
-
 git push</code></pre>
 </div>
 <div id="if-rename-and-update-branch" class="section level4">
@@ -2113,19 +2260,14 @@ git push</code></pre>
 <p>Rename the local branch:</p>
 <pre class="bash"><code># Rename the local branch:
 git branch -m feature/xinyao-bluesky
- 
 # Push the renamed branch to GitLab:
 git push origin feature/xinyao-bluesky
-
 # Delete the old remote branch:
 git push origin --delete feature/bluesky
-
 # Set the upstream tracking branch:
 git push --set-upstream origin feature/xinyao-bluesky
-
 # Delete old branch:
 git push origin --delete feature/bluesky
-
 # Check the final branch:
 git branch</code></pre>
 </div>
@@ -2136,7 +2278,7 @@ updated <code>.Rmd</code> and generated <code>.html</code> files were
 copied into the GitLab repository <code>docs/</code> directory and
 pushed to GitLab.</p>
 <p>Enter the local Git repository:</p>
-<pre class="bash"><code>cd ~/Documents/COMP90024/cccAsm2/git/comp90024_team_36
+<pre class="bash"><code>cd &quot;/Users/k-yao/Documents/COMP90024/cccAsm2/git/comp90024_team_36_clean&quot;
 # Copy the updated files into docs/:
 cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment\ Guide.Rmd docs/
 cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment-Guide.html docs/
@@ -2147,6 +2289,57 @@ git add docs/
 git status
 git commit -m &quot;Update deployment guide docs&quot;
 git push</code></pre>
+</div>
+<div id="step7.-re-clone-latest-gitlab-repository" class="section level4">
+<h4>Step7. Re-clone Latest GitLab Repository</h4>
+<p>After merging the Bluesky backend into <code>main</code>, re-clone
+the latest repository to keep the local project clean and synchronised
+with teammates’ updates.</p>
+<div id="go-to-local-git-directory" class="section level5">
+<h5>1. Go to local git directory</h5>
+<pre class="bash"><code>cd ~/Documents/COMP90024/cccAsm2/git</code></pre>
+</div>
+<div id="clone-latest-repository" class="section level5">
+<h5>2. Clone latest repository</h5>
+<pre class="bash"><code>git clone git@gitlab.unimelb.edu.au:JUNYAOZ5/comp90024_team_36.git comp90024_team_36_clean</code></pre>
+</div>
+<div id="enter-the-new-repository" class="section level5">
+<h5>3. Enter the new repository</h5>
+<pre class="bash"><code>cd comp90024_team_36_clean</code></pre>
+</div>
+<div id="check-branch" class="section level5">
+<h5>4. Check branch</h5>
+<pre class="bash"><code>git branch</code></pre>
+<p>Expected branch:</p>
+<pre class="text"><code>main</code></pre>
+</div>
+<div id="pull-latest-updates" class="section level5">
+<h5>5. Pull latest updates</h5>
+<pre class="bash"><code>git pull origin main</code></pre>
+<p>The latest repository should now contain:</p>
+<pre class="text"><code>backend/fission/reddit
+backend/fission/bluesky</code></pre>
+</div>
+<div id="optional-remove-old-local-repository" class="section level5">
+<h5>6. Optional: Remove old local repository</h5>
+<p>After confirming the new repository works correctly:</p>
+<pre class="bash"><code>rm -rf ~/Documents/COMP90024/cccAsm2/git/comp90024_team_36</code></pre>
+</div>
+<div id="future-update-workflow" class="section level5">
+<h5>7. Future update workflow</h5>
+<p>For future modifications:</p>
+<pre class="bash"><code>git checkout main
+git pull origin main
+git checkout -b feature/update-name</code></pre>
+<p>Modify files under:</p>
+<pre class="text"><code>backend/fission/bluesky/</code></pre>
+<p>Then commit and push:</p>
+<pre class="bash"><code>git add .
+git commit -m &quot;Update Bluesky backend&quot;
+git push origin feature/update-name</code></pre>
+<p>Finally, create a new Merge Request:</p>
+<pre class="text"><code>feature/update-name → main</code></pre>
+</div>
 </div>
 </div>
 
