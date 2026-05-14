@@ -179,18 +179,18 @@ fission function create \
 fission timer create \
   --name fuelwatch-raw-timer \
   --function fuelwatch-raw \
-  --cron "0 2 * * *"
+  --cron "0 */6 * * *"
 
-Runs daily incremental raw ingestion.
+Runs raw ingestion every 6 hours.
 
 ## Aggregation Timer
 
 fission timer create \
   --name fuelwatch-dev-timer \
   --function fuelwatch-dev \
-  --cron "0 3 * * *"
+  --cron "30 */6 * * *"
 
-Runs daily aggregation after raw ingestion completes.
+Runs aggregation 30 minutes after raw ingestion.
 
 # Engineering Features
 
