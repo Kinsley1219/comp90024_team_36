@@ -169,11 +169,13 @@ Additional engineered features were generated during preprocessing to support do
 ```{bash}
 kubectl create secret generic es-secret \
   --from-literal=BSKY_USER='your_bsky_user' \
-  --from-literal=BSKY_PASS='your_app_password' \ 
+  --from-literal=BSKY_PASS='your_app_password' \
   --from-literal=ES_HOST='https://elasticsearch-es-http.elastic:9200' \
   --from-literal=ES_USER='elastic' \
   --from-literal=ES_PASSWORD='elastic' \
-  --from-literal=INDEX_NAME='social-posts'
+  --from-literal=INDEX_NAME='social-posts' \
+  --from-literal=password='elastic' \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
   --old version:
