@@ -1,57 +1,25 @@
 {
-  "social-posts" : {
-    "mappings" : {
-      "properties" : {
-        "author" : {
-          "type" : "keyword"
-        },
-        "created_at" : {
-          "type" : "date"
-        },
-        "date" : {
-          "type" : "date",
-          "format" : "yyyy-MM-dd"
-        },
-        "ingested_at" : {
-          "type" : "date"
-        },
-        "is_au" : {
-          "type" : "boolean"
-        },
-        "is_cost" : {
-          "type" : "boolean"
-        },
-        "is_fuel" : {
-          "type" : "boolean"
-        },
-        "like" : {
-          "type" : "integer"
-        },
-        "platform" : {
-          "type" : "keyword"
-        },
-        "query" : {
-          "type" : "keyword"
-        },
-        "reply" : {
-          "type" : "integer"
-        },
-        "repost" : {
-          "type" : "integer"
-        },
-        "subreddit" : {
-          "type" : "keyword"
-        },
-        "text" : {
-          "type" : "text"
-        },
-        "uri" : {
-          "type" : "keyword"
-        },
-        "url" : {
-          "type" : "keyword"
-        }
-      }
+  "mappings": {
+    "properties": {
+      "author":           { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "created_at":       { "type": "date" },
+      "date":             { "type": "date" },
+      "ingested_at":      { "type": "date" },
+      "is_au":            { "type": "boolean" },
+      "is_cost":          { "type": "boolean" },
+      "is_fuel":          { "type": "boolean" },
+      "like":             { "type": "long" },
+      "matched_location": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "platform":         { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "query":            { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "reply":            { "type": "long" },
+      "repost":           { "type": "long" },
+      "sentiment_label":  { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "sentiment_score":  { "type": "float" },
+      "subreddit":        { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "text":             { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "uri":              { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+      "url":              { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } }
     }
   }
 }
