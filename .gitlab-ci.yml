@@ -1,9 +1,9 @@
 # COMP90024 Team 36 - CI/CD Pipeline
 
 stages:
-  - lint      # code style check (runs first, fastest)
-  - test      # unit tests + dependency security scan (run in parallel)
-  - deploy    # manual deployment to NeCTAR K8s cluster
+  - lint
+  - test
+  - deploy
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -11,11 +11,6 @@ variables:
 cache:
   paths:
     - .cache/pip/
-
-# ── LINT ──────────────────────────────────────────────────────────────────────
-# Checks code style across the backend directory.
-# allow_failure: true means a style violation is visible in the pipeline
-# but does NOT block tests or deployment.
 
 lint:
   stage: lint
@@ -30,14 +25,6 @@ lint:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-# ── TEST ──────────────────────────────────────────────────────────────────────
-# Runs the full test suite and produces two artifacts that GitLab renders natively:
-#   - report.xml  → appears as a "Tests" tab on the pipeline/MR page
-#   - coverage.xml → the coverage percentage appears next to each MR
-#
-# 'needs: [lint]' means this starts as soon as lint finishes (not waiting for
-# security), so test and security run in parallel.
-
 test:
   stage: test
   image: python:3.11-slim
@@ -46,13 +33,7 @@ test:
     - pip install pytest pytest-cov --quiet
   script:
     - echo "=== Running test suite ==="
-    - >-
-      pytest test/ -v
-      --cov=backend/fission/reddit
-      --cov=backend/fission/bluesky
-      --cov-report=term-missing
-      --cov-report=xml:coverage.xml
-      --junitxml=report.xml
+    - pytest test/ -v --cov=backend/fission/reddit --cov=backend/fission/bluesky --cov-report=term-missing --cov-report=xml:coverage.xml --junitxml=report.xml
   coverage: '/TOTAL.*\s+(\d+%)$/'
   artifacts:
     when: always
@@ -65,12 +46,6 @@ test:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
-# ── SECURITY ──────────────────────────────────────────────────────────────────
-# Scans both requirements.txt files for known CVEs using pip-audit.
-# Results are saved as JSON artifacts you can download from the pipeline page.
-# allow_failure: true means a vulnerable package is flagged but does not
-# block deployment (useful when you cannot immediately update a dependency).
 
 security:
   stage: test
@@ -96,13 +71,6 @@ security:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-# ── DEPLOY ────────────────────────────────────────────────────────────────────
-# Manual trigger only. Deploys both reddit and bluesky packages to the
-# NeCTAR Fission cluster, then verifies all functions are live.
-#
-# 'needs: [test, security]' means the deploy button only appears after BOTH
-# test and security have finished (security can fail without blocking deploy).
-
 deploy:
   stage: deploy
   image: python:3.11-slim
@@ -110,69 +78,41 @@ deploy:
     - test
     - security
   before_script:
-    # Decode the kubeconfig stored as a GitLab CI/CD masked variable
     - mkdir -p ~/.kube
     - echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
-    # Install system tools
     - apt-get update -qq && apt-get install -y -qq curl zip
-    # Install kubectl
     - curl -sLO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
     - chmod +x kubectl && mv kubectl /usr/local/bin/
-    # Install Fission CLI
     - curl -sLo fission https://github.com/fission/fission/releases/download/v1.20.1/fission-v1.20.1-linux-amd64
     - chmod +x fission && mv fission /usr/local/bin/
-    # Confirm cluster is reachable before doing anything
     - kubectl get nodes
   script:
-    - echo "========================================="
-    - echo "  Deploying to NeCTAR K8s Cluster"
-    - echo "  Commit  : $CI_COMMIT_SHORT_SHA"
-    - echo "  Branch  : $CI_COMMIT_BRANCH"
-    - echo "  Triggered by: $GITLAB_USER_NAME"
-    - echo "========================================="
-
-    # -- Reddit ----------------------------------------------------------------
-    - echo "=== [Reddit] Building source archive ==="
+    - echo "Deploying commit $CI_COMMIT_SHORT_SHA by $GITLAB_USER_NAME"
+    - echo "=== Building reddit package ==="
     - cd backend/fission/reddit && zip -r ../reddit.zip . && cd ../../..
-
-    - echo "=== [Reddit] Updating Fission package ==="
+    - echo "=== Updating reddit Fission package ==="
     - fission package update --name reddit-pkg --sourcearchive backend/fission/reddit.zip --buildcmd "./build.sh" -f
-
-    - echo "=== [Reddit] Waiting for package build (15s) ==="
+    - echo "=== Waiting for reddit package build ==="
     - sleep 15
     - fission package info --name reddit-pkg
-
-    - echo "=== [Reddit] Updating functions ==="
-    - fission fn update -f --name reddit-harvest   --pkg reddit-pkg --entrypoint "reddit_harvest.main"
-    - fission fn update -f --name reddit-api       --pkg reddit-pkg --entrypoint "reddit_api.main"
+    - echo "=== Updating reddit functions ==="
+    - fission fn update -f --name reddit-harvest --pkg reddit-pkg --entrypoint "reddit_harvest.main"
+    - fission fn update -f --name reddit-api --pkg reddit-pkg --entrypoint "reddit_api.main"
     - fission fn update -f --name reddit-bootstrap --pkg reddit-pkg --entrypoint "reddit_bootstrap.main"
-
-    # -- Bluesky ---------------------------------------------------------------
-    - echo "=== [Bluesky] Building source archive ==="
+    - echo "=== Building bluesky package ==="
     - cd backend/fission/bluesky && zip -r ../bluesky.zip . && cd ../../..
-
-    - echo "=== [Bluesky] Updating Fission package ==="
-    # NOTE: bluesky does not appear to have a build.sh in the repo.
-    # If pip dependencies need to be installed at build time, add
-    # --buildcmd "./build.sh" once build.sh exists in backend/fission/bluesky/.
+    - echo "=== Updating bluesky Fission package ==="
     - fission package update --name bluesky-pkg --sourcearchive backend/fission/bluesky.zip -f
-
-    - echo "=== [Bluesky] Waiting for package build (15s) ==="
+    - echo "=== Waiting for bluesky package build ==="
     - sleep 15
     - fission package info --name bluesky-pkg
-
-    - echo "=== [Bluesky] Updating functions ==="
+    - echo "=== Updating bluesky functions ==="
     - fission fn update -f --name bluesky-harvester --pkg bluesky-pkg --entrypoint "bluesky_harvester.main"
-
-    # -- Verify ----------------------------------------------------------------
     - echo "=== Verifying deployment ==="
     - fission fn list | grep -E "reddit|bluesky"
-    - fission package info --name reddit-pkg  | grep -i status
+    - fission package info --name reddit-pkg | grep -i status
     - fission package info --name bluesky-pkg | grep -i status
     - echo "=== Deployment complete ==="
-
-  after_script:
-    - if [ "$CI_JOB_STATUS" == "failed" ]; then echo "DEPLOY FAILED on commit $CI_COMMIT_SHORT_SHA by $GITLAB_USER_NAME"; fi
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
