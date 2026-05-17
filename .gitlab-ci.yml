@@ -172,12 +172,7 @@ deploy:
     - echo "=== Deployment complete ==="
 
   after_script:
-    # Runs even if the job fails - useful for spotting broken deploys in logs
-    - |
-      if [ "$CI_JOB_STATUS" == "failed" ]; then
-        echo "DEPLOY FAILED on commit $CI_COMMIT_SHORT_SHA by $GITLAB_USER_NAME"
-      fi
-
+    - if [ "$CI_JOB_STATUS" == "failed" ]; then echo "DEPLOY FAILED on commit $CI_COMMIT_SHORT_SHA by $GITLAB_USER_NAME"; fi
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
