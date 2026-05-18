@@ -1,8 +1,0 @@
-{
-  "mappings": {
-    "properties": {
-      "avg_price": { "type": "float" },
-      "date":      { "type": "date" }
-    }
-  }
-}
