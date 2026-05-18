@@ -1,6 +1,7 @@
 # COMP90024 Team 36 - CI/CD Pipeline
 
 stages:
+  - lint
   - test
   - deploy
 
@@ -11,14 +12,61 @@ cache:
   paths:
     - .cache/pip/
 
+lint:
+  stage: lint
+  image: python:3.11-slim
+  before_script:
+    - pip install flake8 --quiet
+  script:
+    - echo "=== Running flake8 style check ==="
+    - flake8 backend/ --max-line-length=100 --exclude=__pycache__ --statistics
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 test:
   stage: test
   image: python:3.11-slim
+  needs: [lint]
   before_script:
-    - pip install pytest
+    - pip install pytest pytest-cov --quiet
   script:
-    - echo "Running tests..."
-    - pytest test/ -v
+    - echo "=== Running test suite ==="
+    - pytest test/ -v --cov=backend/fission/reddit --cov=backend/fission/bluesky --cov-report=term-missing --cov-report=xml:coverage.xml --junitxml=report.xml
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    expire_in: 1 week
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+security:
+  stage: test
+  image: python:3.11-slim
+  needs: [lint]
+  before_script:
+    - pip install pip-audit --quiet
+  script:
+    - echo "=== Scanning reddit dependencies ==="
+    - pip-audit -r backend/fission/reddit/requirements.txt -f json -o reddit-audit.json || true
+    - pip-audit -r backend/fission/reddit/requirements.txt || true
+    - echo "=== Scanning bluesky dependencies ==="
+    - pip-audit -r backend/fission/bluesky/requirements.txt -f json -o bluesky-audit.json || true
+    - pip-audit -r backend/fission/bluesky/requirements.txt || true
+  artifacts:
+    when: always
+    paths:
+      - reddit-audit.json
+      - bluesky-audit.json
+    expire_in: 1 week
+  allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -26,39 +74,45 @@ test:
 deploy:
   stage: deploy
   image: python:3.11-slim
+  needs:
+    - test
+    - security
   before_script:
-    # Set up kubeconfig
     - mkdir -p ~/.kube
     - echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
-    # Install system dependencies
     - apt-get update -qq && apt-get install -y -qq curl zip
-    # Install kubectl
     - curl -sLO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
     - chmod +x kubectl && mv kubectl /usr/local/bin/
-    # Install fission CLI
     - curl -sLo fission https://github.com/fission/fission/releases/download/v1.20.1/fission-v1.20.1-linux-amd64
     - chmod +x fission && mv fission /usr/local/bin/
-    # Verify cluster connection
     - kubectl get nodes
   script:
-    # Build reddit zip package (output directly to backend/fission/reddit.zip)
+    - echo "Deploying commit $CI_COMMIT_SHORT_SHA by $GITLAB_USER_NAME"
     - echo "=== Building reddit package ==="
     - cd backend/fission/reddit && zip -r ../reddit.zip . && cd ../../..
-    # Update package with -f flag
-    - echo "=== Updating reddit fission package ==="
+    - echo "=== Updating reddit Fission package ==="
     - fission package update --name reddit-pkg --sourcearchive backend/fission/reddit.zip --buildcmd "./build.sh" -f
-    # Wait for build
-    - echo "=== Waiting for package build ==="
+    - echo "=== Waiting for reddit package build ==="
     - sleep 15
     - fission package info --name reddit-pkg
-    # Update functions
     - echo "=== Updating reddit functions ==="
     - fission fn update -f --name reddit-harvest --pkg reddit-pkg --entrypoint "reddit_harvest.main"
     - fission fn update -f --name reddit-api --pkg reddit-pkg --entrypoint "reddit_api.main"
     - fission fn update -f --name reddit-bootstrap --pkg reddit-pkg --entrypoint "reddit_bootstrap.main"
+    - echo "=== Building bluesky package ==="
+    - cd backend/fission/bluesky && zip -r ../bluesky.zip . && cd ../../..
+    - echo "=== Updating bluesky Fission package ==="
+    - fission package update --name bluesky-pkg --sourcearchive backend/fission/bluesky.zip -f
+    - echo "=== Waiting for bluesky package build ==="
+    - sleep 15
+    - fission package info --name bluesky-pkg
+    - echo "=== Updating bluesky functions ==="
+    - fission fn update -f --name bluesky-harvester --pkg bluesky-pkg --entrypoint "bluesky_harvester.main"
+    - echo "=== Verifying deployment ==="
+    - fission fn list | grep -E "reddit|bluesky"
+    - fission package info --name reddit-pkg | grep -i status
+    - fission package info --name bluesky-pkg | grep -i status
     - echo "=== Deployment complete ==="
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
-  needs:
-    - test
