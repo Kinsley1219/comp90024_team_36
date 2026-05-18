@@ -1,0 +1,31 @@
+publish_date,trading_name,brand_description,product_description,product_price,address,location,postcode,latitude,longitude,site_features,source,source_file,ingested_at
+2026-05-01,53 Mile Roadhouse,United,ULP,199.9,31 South Western Hwy,PINJARRA,6208,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,53 Mile Roadhouse,United,Diesel,259.9,31 South Western Hwy,PINJARRA,6208,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,53 Mile Roadhouse,United,98 RON,215.9,31 South Western Hwy,PINJARRA,6208,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Alkimos,7-Eleven,ULP,169.9,10 Carlsbad Prom,ALKIMOS,6038,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Alkimos,7-Eleven,PULP,184.9,10 Carlsbad Prom,ALKIMOS,6038,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Alkimos,7-Eleven,Brand Diesel,245.9,10 Carlsbad Prom,ALKIMOS,6038,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Alkimos,7-Eleven,98 RON,192.9,10 Carlsbad Prom,ALKIMOS,6038,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Ascot,7-Eleven,ULP,173.9,194 Great Eastern Hwy,ASCOT,6104,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Ascot,7-Eleven,PULP,188.9,194 Great Eastern Hwy,ASCOT,6104,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Ascot,7-Eleven,Brand Diesel,249.9,194 Great Eastern Hwy,ASCOT,6104,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Ascot,7-Eleven,98 RON,196.9,194 Great Eastern Hwy,ASCOT,6104,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balcatta,7-Eleven,ULP,169.9,174 Balcatta Rd,BALCATTA,6021,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balcatta,7-Eleven,PULP,184.9,174 Balcatta Rd,BALCATTA,6021,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balcatta,7-Eleven,Brand Diesel,249.9,174 Balcatta Rd,BALCATTA,6021,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balcatta,7-Eleven,98 RON,192.9,174 Balcatta Rd,BALCATTA,6021,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Baldivis,7-Eleven,ULP,169.9,370 Baldivis Rd,BALDIVIS,6171,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Baldivis,7-Eleven,PULP,184.9,370 Baldivis Rd,BALDIVIS,6171,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Baldivis,7-Eleven,Brand Diesel,249.9,370 Baldivis Rd,BALDIVIS,6171,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Baldivis,7-Eleven,98 RON,192.9,370 Baldivis Rd,BALDIVIS,6171,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balga,7-Eleven,ULP,169.9,102 Princess Rd,BALGA,6061,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balga,7-Eleven,PULP,184.9,102 Princess Rd,BALGA,6061,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balga,7-Eleven,Brand Diesel,249.9,102 Princess Rd,BALGA,6061,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Balga,7-Eleven,98 RON,192.9,102 Princess Rd,BALGA,6061,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Banksia Grove,7-Eleven,ULP,171.9,1/300 Joseph Banks Bvd,BANKSIA GROVE,6031,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Banksia Grove,7-Eleven,PULP,186.9,1/300 Joseph Banks Bvd,BANKSIA GROVE,6031,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Banksia Grove,7-Eleven,Brand Diesel,245.9,1/300 Joseph Banks Bvd,BANKSIA GROVE,6031,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Banksia Grove,7-Eleven,98 RON,194.9,1/300 Joseph Banks Bvd,BANKSIA GROVE,6031,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Bassendean,7-Eleven,ULP,171.9,302-318 Collier Rd,BASSENDEAN,6054,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Bassendean,7-Eleven,PULP,186.9,302-318 Collier Rd,BASSENDEAN,6054,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
+2026-05-01,7-Eleven Bassendean,7-Eleven,Brand Diesel,249.9,302-318 Collier Rd,BASSENDEAN,6054,,,,FuelWatch WA,FuelWatchRetail-05-2026.csv,2026-05-18T15:58:06Z
