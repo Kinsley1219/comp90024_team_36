@@ -440,6 +440,58 @@ Unknown                                  → no location signal found
 |-------|------|-------------|
 | `matched_location` | keyword | Detected location or "Unknown" |
 
+## Data Schema
+
+Each Reddit post is stored as a document in the `social-posts` ElasticSearch index with the following fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `uri` | keyword | Unique document ID, format: `reddit_<post_id>`. Used as ES document ID for deduplication. |
+| `text` | text | Full post content (title + body combined). Full-text searchable. |
+| `author` | keyword | Reddit username of the post author. |
+| `query` | keyword | The matched query phrase that caused this post to be harvested (e.g. `petrol Australia`). |
+| `created_at` | date | Post creation timestamp in ISO 8601 format (UTC). |
+| `date` | date | Post creation date only, format `YYYY-MM-DD`. |
+| `platform` | keyword | Always `reddit`. Used for cross-platform filtering in shared index. |
+| `subreddit` | keyword | Source subreddit (e.g. `australia`, `AusFinance`, `perth`). |
+| `url` | keyword | Full URL to the original Reddit post. |
+| `ingested_at` | date | Timestamp when the post was written into ElasticSearch. |
+| `like` | integer | Reddit upvote score at time of ingestion. |
+| `reply` | integer | Number of comments at time of ingestion. |
+| `repost` | integer | Always 0 (Reddit does not expose repost count via public API). |
+| `is_fuel` | boolean | True if post text contains fuel/petrol/diesel related keywords. |
+| `is_cost` | boolean | True if post text contains cost-of-living related keywords (rent, bills, inflation, etc.). |
+| `is_au` | boolean | True if post text mentions Australian cities or states. |
+| `sentiment_score` | float | VADER compound sentiment score, range -1.0 (most negative) to +1.0 (most positive). |
+| `sentiment_label` | keyword | Sentiment category: `positive` (≥0.05), `negative` (≤-0.05), or `neutral`. |
+| `matched_location` | keyword | Detected Australian location (e.g. `Sydney`, `Perth`, `Australia`) or `Unknown`. |
+
+### Example document
+
+```json
+{
+  "uri": "reddit_1t6ssil",
+  "text": "On a scale of 1 to 10, how cooked is the Roger Cook Government?...",
+  "author": "illicit",
+  "query": "petrol Australia",
+  "created_at": "2026-05-08T00:46:08+00:00",
+  "date": "2026-05-08",
+  "platform": "reddit",
+  "subreddit": "perth",
+  "url": "https://www.reddit.com/r/perth/comments/1t6ssil/...",
+  "ingested_at": "2026-05-08T07:29:03+00:00",
+  "like": 0,
+  "reply": 100,
+  "repost": 0,
+  "is_fuel": true,
+  "is_cost": true,
+  "is_au": true,
+  "sentiment_score": -0.8721,
+  "sentiment_label": "negative",
+  "matched_location": "Perth"
+}
+```
+
 ## Implementation Notes
 
 - ElasticSearch document ID is set to the post URI to prevent duplicates.

@@ -1,0 +1,85 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  annotations:
+    eck.k8s.elastic.co/orchestration-hints: '{"no_transient_settings":true,"service_accounts":true}'
+    elasticsearch.k8s.elastic.co/cluster-uuid: FYhnPwkoRpqAcz8b1ciGcg
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"elasticsearch.k8s.elastic.co/v1","kind":"Elasticsearch","metadata":{"annotations":{},"name":"elasticsearch","namespace":"elastic"},"spec":{"nodeSets":[{"config":{"node.roles":["master","data","ingest"]},"count":2,"name":"default","volumeClaimTemplates":[{"metadata":{"name":"elasticsearch-data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"100Gi"}},"storageClassName":"perfretain"}}]}],"version":"9.2.4"}}
+  creationTimestamp: "2026-05-02T10:01:15Z"
+  generation: 3
+  name: elasticsearch
+  namespace: elastic
+  resourceVersion: "1745545"
+  uid: f4d05582-45d7-4dfa-89af-c0182ec8d452
+spec:
+  auth: {}
+  http:
+    service:
+      metadata: {}
+      spec: {}
+    tls:
+      certificate: {}
+  monitoring:
+    logs: {}
+    metrics: {}
+  nodeSets:
+  - config:
+      node.roles:
+      - master
+      - data
+      - ingest
+    count: 2
+    name: default
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+        storageClassName: perfretain
+  remoteClusterServer: {}
+  transport:
+    service:
+      metadata: {}
+      spec: {}
+    tls:
+      certificate: {}
+      certificateAuthorities: {}
+  updateStrategy:
+    changeBudget: {}
+  version: 9.2.4
+status:
+  availableNodes: 2
+  conditions:
+  - lastTransitionTime: "2026-05-02T10:02:30Z"
+    status: "True"
+    type: ReconciliationComplete
+  - lastTransitionTime: "2026-05-02T10:01:16Z"
+    message: All nodes are running version 9.2.4
+    status: "True"
+    type: RunningDesiredVersion
+  - lastTransitionTime: "2026-05-02T10:02:30Z"
+    message: Service elastic/elasticsearch-es-internal-http has endpoints
+    status: "True"
+    type: ElasticsearchIsReachable
+  - lastTransitionTime: "2026-05-06T04:51:20Z"
+    message: 'Cannot get compute and storage resources from Elasticsearch resource
+      generation 3: cannot compute resources for NodeSet "default": no CPU request
+      or limit set'
+    status: "False"
+    type: ResourcesAwareManagement
+  health: green
+  inProgressOperations:
+    downscale:
+      lastUpdatedTime: "2026-05-02T10:01:16Z"
+    upgrade:
+      lastUpdatedTime: "2026-05-02T10:01:16Z"
+    upscale:
+      lastUpdatedTime: "2026-05-02T10:01:16Z"
+  observedGeneration: 3
+  phase: Ready
+  version: 9.2.4

@@ -179,6 +179,39 @@ The Bluesky crawler writes documents similar to the following structure:
 }
 ```
 
+---
+
+### Field Descriptions
+
+| Field | Description |
+|---|---|
+| `url` | Unique URI of the Bluesky post. Used as the Elasticsearch document ID to avoid duplicate records. |
+| `text` | Main textual content of the post. |
+| `author` | Bluesky user handle of the post creator. |
+| `query` | Search keyword used during crawling. |
+| `created_at` | Original timestamp of post creation. |
+| `date` | Extracted date (`YYYY-MM-DD`) used for daily aggregation and Kibana visualisation. |
+| `platform` | Source platform identifier (`bluesky`). |
+| `ingested_at` | Timestamp when the document was stored in Elasticsearch. |
+| `like` | Number of likes received by the post. |
+| `reply` | Number of replies received by the post. |
+| `repost` | Number of reposts received by the post. |
+| `is_fuel` | Boolean indicator showing whether the post is related to fuel topics. |
+| `is_cost` | Boolean indicator showing whether the post is related to cost-of-living topics. |
+| `is_au` | Boolean indicator showing whether the post is related to Australia. |
+| `sentiment_score` | VADER compound sentiment score ranging from `-1` to `1`. |
+| `sentiment_label` | Sentiment category (`positive`, `neutral`, or `negative`). |
+| `matched_location` | Detected Australian state or region inferred using keyword matching. |
+
+### Feature Engineering
+
+Several analytical features are generated during preprocessing to support filtering, aggregation, and sentiment analysis.
+
+- `sentiment_score` and `sentiment_label` are generated using the VADER sentiment analysis model.
+- `matched_location` is inferred using Australian location keyword matching.
+- `is_fuel`, `is_cost`, and `is_au` are engineered topic indicators used for Kibana filtering and dashboard visualisation.
+
+
 ## Deployment Steps
 
 ### Step 1. Create Kubernetes Secret

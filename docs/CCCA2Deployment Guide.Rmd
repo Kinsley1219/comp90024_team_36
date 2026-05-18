@@ -128,17 +128,54 @@ This design supports continuous real-time updates while gradually completing his
 * Timer-based crawling runs automatically. The interval was changed from every 2 minutes to a longer interval to avoid Bluesky API rate limits.
 * Data is continuously written into the shared `social-posts` index.
 
-##### III. Deployment Steps
+##### III. Bluesky Dataset Fields
+
+The processed Bluesky dataset contains both original post attributes and additional analytical features generated during preprocessing.
+
+| Field | Type | Description |
+|---|---|---|
+| `url` | string | Unique URI of the Bluesky post and Elasticsearch document ID |
+| `text` | text | Main textual content of the post |
+| `author` | string | Bluesky user handle |
+| `query` | string | Search keyword used during crawling |
+| `created_at` | datetime | Original post creation timestamp |
+| `date` | date | Extracted date used for aggregation |
+| `platform` | string | Source platform identifier (`bluesky`) |
+| `ingested_at` | datetime | Elasticsearch ingestion timestamp |
+| `like` | integer | Number of likes |
+| `reply` | integer | Number of replies |
+| `repost` | integer | Number of reposts |
+| `is_fuel` | boolean | Fuel-topic indicator |
+| `is_cost` | boolean | Cost-of-living topic indicator |
+| `is_au` | boolean | Australia-related indicator |
+| `sentiment_score` | float | VADER sentiment score |
+| `sentiment_label` | string | Sentiment category |
+| `matched_location` | string | Detected Australian region |
+
+Additional engineered features were generated during preprocessing to support downstream analysis and dashboard visualisation.
+
+| Engineered Feature | Description |
+|---|---|
+| `sentiment_score` | Continuous VADER compound sentiment score ranging from `-1` to `1` |
+| `sentiment_label` | Sentiment category derived from the sentiment score (`positive`, `neutral`, `negative`) |
+| `matched_location` | Australian state or region inferred using keyword-based location matching |
+| `is_fuel` | Boolean indicator showing whether the post is related to fuel or petrol topics |
+| `is_cost` | Boolean indicator showing whether the post is related to cost-of-living topics |
+| `is_au` | Boolean indicator showing whether the post is related to Australia |
+
+##### IV. Deployment Steps
 #### Step 1. Create Secret 
 (And also can create Configmap, but I didn't use it.)
 ```{bash}
 kubectl create secret generic es-secret \
   --from-literal=BSKY_USER='your_bsky_user' \
-  --from-literal=BSKY_PASS='your_app_password' \ 
+  --from-literal=BSKY_PASS='your_app_password' \
   --from-literal=ES_HOST='https://elasticsearch-es-http.elastic:9200' \
   --from-literal=ES_USER='elastic' \
   --from-literal=ES_PASSWORD='elastic' \
-  --from-literal=INDEX_NAME='social-posts'
+  --from-literal=INDEX_NAME='social-posts' \
+  --from-literal=password='elastic' \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
   --old version:
@@ -581,25 +618,22 @@ cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/requirements.txt backend/b
 cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/bluesky_harvester.py backend/bluesky/
 cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/bluesky_processor.py backend/bluesky/
 cp ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/bluesky_storager.py backend/bluesky/
-cp -R ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/specs .
+cp -R ~/Documents/COMP90024/cccAsm2/2.Fission\ Harvester/specs backend/bluesky/
 
 # Check whether the files were copied successfully
 ls backend/bluesky
-ls specs
+ls backend/bluesky/specs
 ```
 
 
 #### Step4. Commit and Push to GitLab
 ```{bash}
 # Stage all files
-git add .
-
+git add backend/bluesky
 # Check the files before committing
 git status
-
 # Commit the changes
 git commit -m "Add Bluesky backend pipeline"
-
 git push origin feature/bluesky
 ```
 
@@ -635,19 +669,14 @@ Rename the local branch:
 ```{bash}
 # Rename the local branch:
 git branch -m feature/xinyao-bluesky
- 
 # Push the renamed branch to GitLab:
 git push origin feature/xinyao-bluesky
-
 # Delete the old remote branch:
 git push origin --delete feature/bluesky
-
 # Set the upstream tracking branch:
 git push --set-upstream origin feature/xinyao-bluesky
-
 # Delete old branch:
 git push origin --delete feature/bluesky
-
 # Check the final branch:
 git branch
 ```
@@ -659,7 +688,7 @@ After modifying the `.Rmd` deployment guide locally, the updated `.Rmd` and gene
 
 Enter the local Git repository:
 ```{bash}
-cd ~/Documents/COMP90024/cccAsm2/git/comp90024_team_36
+cd "/Users/k-yao/Documents/COMP90024/cccAsm2/git/comp90024_team_36_clean"
 # Copy the updated files into docs/:
 cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment\ Guide.Rmd docs/
 cp ~/Documents/COMP90024/cccAsm2/CCCA2Deployment-Guide.html docs/
@@ -670,3 +699,89 @@ git add docs/
 git status
 git commit -m "Update deployment guide docs"
 git push
+```
+
+#### Step7. Re-clone Latest GitLab Repository
+
+After merging the Bluesky backend into `main`, re-clone the latest repository to keep the local project clean and synchronised with teammates' updates.
+
+##### 1. Go to local git directory
+
+```bash
+cd ~/Documents/COMP90024/cccAsm2/git
+```
+
+##### 2. Clone latest repository
+
+```bash
+git clone git@gitlab.unimelb.edu.au:JUNYAOZ5/comp90024_team_36.git comp90024_team_36_clean
+```
+
+##### 3. Enter the new repository
+
+```bash
+cd comp90024_team_36_clean
+```
+
+##### 4. Check branch
+
+```bash
+git branch
+```
+
+Expected branch:
+
+```text
+main
+```
+
+##### 5. Pull latest updates
+
+```bash
+git pull origin main
+```
+
+The latest repository should now contain:
+
+```text
+backend/fission/reddit
+backend/fission/bluesky
+```
+
+##### 6. Optional: Remove old local repository
+
+After confirming the new repository works correctly:
+
+```bash
+rm -rf ~/Documents/COMP90024/cccAsm2/git/comp90024_team_36
+```
+
+##### 7. Future update workflow
+
+For future modifications:
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/update-name
+```
+
+Modify files under:
+
+```text
+backend/fission/bluesky/
+```
+
+Then commit and push:
+
+```bash
+git add .
+git commit -m "Update Bluesky backend"
+git push origin feature/update-name
+```
+
+Finally, create a new Merge Request:
+
+```text
+feature/update-name → main
+```
