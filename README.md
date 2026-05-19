@@ -17,10 +17,10 @@ The collected data is stored in Elasticsearch. Fission serverless functions are 
 | Member | Main Contribution |
 |---|---|
 | Xinyao Li | Designed and deployed the Bluesky Fission ingestion pipeline, implemented Elasticsearch integration and cursor tracking, validated ingestion workflows, and produced system architecture and deployment diagrams. |
-| Junyao Zhang | Initial Kubernetes cluster setup, kubeconfig sharing, Reddit Fission pipeline, Reddit realtime and historical ingestion. |
-| Hanyue Li | Designed and deployed the Elasticsearch cluster infrastructure, implemented the distributed storage architecture, and developed the backend REST API and daily aggregation pipeline as Fission serverless functions. |
-| Hongkun Zhang | Designed, implemented, and deployed the FuelWatch data pipeline, developed Jupyter Notebook frontend visualisations, and conducted data analysis. |
-| Yichen Sun | Designed and implemented the CI/CD pipeline infrastructure on GitLab. Managed release coordination and ensured consistent deployment across the team's development lifecycle. |
+| Junyao Zhang | Initial Kubernetes cluster setup, kubeconfig sharing, Reddit Fission pipeline, Reddit realtime and historical ingestion |
+| Hanyue Li | Elasticsearch and Kibana deployment, storage optimisation, aggregation pipeline, backend analytics API |
+| Hongkun Zhang | FuelWatch Fission pipeline, official fuel price processing, Jupyter Notebook visualisation and automation |
+| Yichen Sun | GitLab CI/CD support, documentation/background support |
 
 ## System Architecture
 
@@ -147,8 +147,8 @@ Location: `backend/fission/fuelwatch/`
 
 Main functions:
 
-- `fuelwatch-raw`
-- `fuelwatch-dev`
+- `fuelwatch-raw` is the main production ingestion function. 
+- `fuelwatch-dev` was used for development and validation of daily ULP processing.
 
 Main timers:
 
@@ -176,6 +176,7 @@ Important indices include:
 | `fuelwatch-raw`-> `fuelwatch-raw-v1` | alias → physical index | 3 | 4,388,076 | FuelWatch raw ingestion, daily aggregator | Raw station-level FuelWatch records |
 | `fuelwatch-daily-ulp` | development/validation index | 1 | 1,599 | FuelWatch processing | Intermediate daily ULP validation dataset |
 | `fuel-daily-summary` | pre-aggregated analytics index | 3 | 1,599 | Daily aggregator, backend API | Pre-aggregated fuel price summary for `/api/v1/trends` |
+
 Kibana is used to inspect index mappings, document counts, sample records, and ingestion results.
 
 ### Backend Analytics API
@@ -250,7 +251,7 @@ Detailed deployment commands are kept in the module-level README files rather th
 | Kibana Web UI | 5601 | Used for Kibana inspection |
 | Local FastAPI prototype | 8000 | Used by `backend/api_gateway.py` before Fission migration |
 | Final analytics API through Fission router | 8888 | Used for `/api/v1/trends` |
-| Fission router (alternative) | 9090 | Default Fission router port; used for Reddit API testing |
+| Reddit API testing through Fission router | 9090 | Used only for Reddit API testing |
 
 ## CI/CD
 
@@ -298,7 +299,7 @@ Before updating a shared Kubernetes Secret, team members should inspect existing
 
 GitLab Repository: https://gitlab.unimelb.edu.au/JUNYAOZ5/comp90024_team_36.git 
 
-YouTube Demonstration: `[Add YouTube demonstration link]`
+YouTube Demonstration:  https://youtu.be/It4Hejc5Z8c?si=u53z3XJB4hKNyYt- 
 
 ## Project Status
 
