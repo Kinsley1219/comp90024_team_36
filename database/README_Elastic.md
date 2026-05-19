@@ -634,7 +634,7 @@ their purpose, schema, and relationship to each other.
 |-------|--------|------|------|------|
 | `fuelwatch-raw-v1` | 3 | 4,378,039 | 1.26 GB | Raw source data |
 | `fuel-daily-summary` | 3 | 1,596 | 286 KB | Pre-aggregated fuel baseline |
-| `social-posts-v1` | 72,631 | 144 MB | 3 | Harvested social media posts |
+| `social-posts-v1` | 3 | 72,631 | 144 MB | Harvested social media posts |
 | `bluesky-cursors` | — | ~59 | — | Crawler state (internal use only) |
 
 Both `fuelwatch-raw-v1` and `social-posts-v1` are accessed via aliases
