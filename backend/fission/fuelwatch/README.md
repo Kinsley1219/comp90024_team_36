@@ -6,7 +6,7 @@ This module implements the complete FuelWatch backend ingestion and aggregation 
 
 The pipeline provides:
 
-FuelWatch WA API
+FuelWatch monthly metadata API
     ↓
 Monthly retail fuel CSV reports
     ↓
@@ -164,7 +164,7 @@ The average ULP price is computed as the mean of all ULP station prices publishe
 | INDEX_NAME | Aggregated Elasticsearch index | fuelwatch-daily-ulp |
 | RAW_INDEX_NAME | Raw Elasticsearch index | fuelwatch-raw |
 | START_YEAR | Earliest year to process | 2022 |
-| MAX_FILES | Limit monthly files for testing | 1 |
+| MAX_FILES | Limit monthly files for testing | Optional testing limit |
 | BULK_BATCH_SIZE | Elasticsearch bulk batch size | 1000 |
 
 # Local Testing
@@ -285,7 +285,7 @@ The implementation includes several production-oriented engineering improvements
 
 The pipeline has been successfully deployed and validated on the shared COMP90024 Kubernetes/Fission environment with Elasticsearch persistence enabled.
 
-Current successful historical backfill results:
+Current successful historical backfill results(Continuously updating):
 
 | Metric | Value |
 |---|---|
@@ -293,3 +293,7 @@ Current successful historical backfill results:
 | Raw records indexed | 4,354,746 |
 | Aggregated daily records | 1,586 |
 | Failed files | 0 |
+
+# Additional notes
+
+fuelwatch-daily-ulp serves as an intermediate validation and analytical dataset during development and frontend analysis.
