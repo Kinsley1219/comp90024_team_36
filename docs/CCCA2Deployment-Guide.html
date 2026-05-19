@@ -1772,23 +1772,9 @@ Australia</td>
 <div id="iv.-deployment-steps" class="section level5">
 <h5>IV. Deployment Steps</h5>
 </div>
-<div id="step-1.-create-secret" class="section level4">
-<h4>Step 1. Create Secret</h4>
+<div id="step-1.-create-secret-hidden" class="section level4">
+<h4>Step 1. Create Secret (Hidden)</h4>
 <p>(And also can create Configmap, but I didn’t use it.)</p>
-<pre class="bash"><code>kubectl create secret generic es-secret \
-  --from-literal=BSKY_USER=&#39;your_bsky_user&#39; \
-  --from-literal=BSKY_PASS=&#39;your_app_password&#39; \
-  --from-literal=ES_HOST=&#39;https://elasticsearch-es-http.elastic:9200&#39; \
-  --from-literal=ES_USER=&#39;elastic&#39; \
-  --from-literal=ES_PASSWORD=&#39;elastic&#39; \
-  --from-literal=INDEX_NAME=&#39;social-posts&#39; \
-  --from-literal=password=&#39;elastic&#39; \
-  --dry-run=client -o yaml | kubectl apply -f -</code></pre>
-<p>–old version: –from-literal=BSKY_USER=‘xinyao02.bsky.social’<br />
-–from-literal=BSKY_PASS=‘Lixinyao2002’<br />
-–final used: –from-literal=BSKY_USER=‘yilin40.bsky.social’<br />
-–from-literal=BSKY_PASS=‘123456789’<br />
-</p>
 <p>Optional: Check Secret Yaml</p>
 <pre class="bash"><code>kubectl get secret es-secret -o yaml</code></pre>
 </div>
