@@ -26,9 +26,9 @@
 | `analytics_service.py` (cloud) | Production version of `api_gateway.py`, adapted for Fission — deployed as function `fuel-sentiment-analytics` | Fission container, exposed via route `/api/v1/trends` | Internal cluster DNS |
 
 **Key relationships:**
-- `aggregate_fuel.py` (local) → validates aggregation logic → `aggregate_fuel.py` (cloud) is the same file adapted for Fission with incremental processing
-- `api_gateway.py` → validates merge logic locally → `analytics_service.py` is the cloud adaptation of the same logic
-- Both cloud functions read credentials from the same `es-secret` Kubernetes Secret
+- `aggregate_fuel.py` (local) → validates aggregation logic → `aggregate_fuel.py` (cloud) is the same file adapted for Fission with incremental processing.
+- `api_gateway.py` → validates merge logic locally → `analytics_service.py` is the cloud adaptation of the same logic.
+- Both cloud functions read credentials from the same `es-secret` Kubernetes Secret.
 
 ---
  
@@ -512,7 +512,7 @@ Explicitly added `"time_zone": "Australia/Melbourne"` to all `date_histogram` ag
   Run in `WSL2 Ubuntu terminal`:
   ```bash
   fission timer create \
-      --name fuel-aggregation-daily \
+      --name fuel-daily-aggregator \
       --function daily-aggregator \
       --cron "0 3 * * *"
   ```
@@ -527,7 +527,7 @@ Explicitly added `"time_zone": "Australia/Melbourne"` to all `date_histogram` ag
   ```bash
   fission timer list
   ```
-  * Expected: `fuel-aggregation-daily` appears with cron `0 3 * * *`.
+  * Expected: `fuel-daily-aggregator` appears with cron `0 3 * * *`.
 
 * **Action 2 — Manually trigger the function to test without waiting:**
   Run in `WSL2 Ubuntu terminal`:

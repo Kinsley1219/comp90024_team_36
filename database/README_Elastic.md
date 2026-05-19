@@ -15,6 +15,7 @@
    - [Phase 2: Distributed Storage Architecture (Sharding)](#phase-2-distributed-storage-architecture-sharding)
    - [Phase 3: Decoupled Aggregation Pipeline](#phase-3-decoupled-aggregation-pipeline)
 
+3. [Elasticsearch — Production Index Reference](#3-elasticsearch--production-index-reference)
 
 ---
 
@@ -254,7 +255,8 @@ This step was `not performed during initial setup`. Indices were created without
 * **Discovery:**
 As data volume grew (4.3M+ records in `fuelwatch-raw`, 70,000+ in `social-posts`), the single-shard layout became a bottleneck — all read/write load was concentrated on one node with no horizontal distribution.
 * **Resolution:** 
-Rather than deleting and recreating the indices (which would lose all ingested data), a zero-downtime migration was performed via `_reindex` + `Index Aliasing`. This is documented in **Phase 2: Distributed Storage Architecture (Sharding)**.
+Rather than deleting and recreating the indices (which would lose all ingested data), a data-safe migration was performed via `_reindex` + `Index Aliasing`, prioritising data integrity over zero-downtime. 
+This is documented in **Phase 2: Distributed Storage Architecture (Sharding)**.
 * **What should have been done here:**
   * **Warning:** 
   Running `DELETE` **will wipe existing data**. **Only perform this** during the **initial setup** or when a **schema reset is required**.
@@ -617,4 +619,99 @@ Always define explicit `mappings` and `settings.number_of_shards` before any dat
 
 ### Step 2: Offline Aggregation Script (`aggregate_fuel.py`)
 * **Action:**
-  See **README_Backend — Phase 2 Step 1** for the complete execution steps and algorithm.
+  See **Backend — Phase 2 Step 1** for the complete execution steps and algorithm.
+
+---
+
+# 3. Elasticsearch — Production Index Reference
+
+This section documents the four production indices currently active in the cluster,
+their purpose, schema, and relationship to each other.
+
+## Index Overview
+
+| Index | Shards | Docs | Size | Role |
+|-------|--------|------|------|------|
+| `fuelwatch-raw-v1` | 3 | 4,378,039 | 1.26 GB | Raw source data |
+| `fuel-daily-summary` | 3 | 1,596 | 286 KB | Pre-aggregated fuel baseline |
+| `social-posts-v1` | 72,631 | 144 MB | 3 | Harvested social media posts |
+| `bluesky-cursors` | — | ~59 | — | Crawler state (internal use only) |
+
+Both `fuelwatch-raw-v1` and `social-posts-v1` are accessed via aliases
+(`fuelwatch-raw` and `social-posts` respectively), so harvester write targets
+require zero code changes after the 3-shard migration.
+
+---
+
+## `social-posts-v1` (alias: `social-posts`)
+
+**Purpose:** Unified store for all harvested social media posts from Bluesky and
+Reddit. Sentiment scoring (VADER) is applied at ingestion time by the harvester functions, so every document already carries a `sentiment_score` float on arrival.
+
+**Key fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `created_at` | `date` | Post timestamp (stored in UTC, bucketed in AEST) |
+| `platform` | `keyword` | `"bluesky"` or `"reddit"` |
+| `text` | `text` | Raw post content |
+| `sentiment_score` | `float` | VADER compound score (−1.0 to +1.0) |
+| `sentiment_label` | `keyword` | `"positive"`, `"negative"`, `"neutral"` |
+| `matched_location` | `keyword` | Inferred Australian city/region |
+| `is_au` | `boolean` | Whether post is Australia-related |
+| `is_fuel` | `boolean` | Whether post mentions fuel/petrol |
+| `is_cost` | `boolean` | Whether post mentions cost of living |
+| `subreddit` | `keyword` | Source subreddit (Reddit only) |
+
+**Timezone note:** All `date_histogram` aggregations in the API layer use `time_zone: "Australia/Melbourne"` to ensure posts made after 14:00 AEST are bucketed into the correct local date, not the following UTC day.
+
+**Consumers:** `analytics_service.py` (real-time aggregation for sentiment data).
+
+---
+
+## `fuelwatch-raw-v1` (alias: `fuelwatch-raw`)
+
+**Purpose:** 
+Stores every raw station-level fuel price record ingested from the FuelWatch WA API. This is the single source of truth for all fuel price data.
+
+**Key fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `publish_date` | `date` | Date of the price record |
+| `product_price` | `float` | Fuel price in cents per litre |
+| `fuel_type` | `keyword` | e.g. ULP, diesel |
+| `state` | `keyword` | Australian state |
+| `location` | `geo_point` | Station coordinates |
+
+**Why 3 shards:** 
+At 4.37M records and 1.26 GB, a single-shard layout concentrated all read/write load on one node. The 3-shard layout distributes ~1.45M records per shard across both cluster nodes, enabling parallel aggregation.
+
+**Consumers:** `aggregate_fuel.py` (aggregation source), Kibana dashboards.
+
+---
+
+## `fuel-daily-summary`
+
+**Purpose:** 
+Pre-aggregated daily national average fuel price, computed from `fuelwatch-raw-v1` by the `daily-aggregator` Fission function. Reduces 4.37M raw records to ~1,596 daily summary rows, enabling O(1) lookups in the API layer.
+
+**Key fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | `date` | The calendar date (AEST) |
+| `avg_price` | `float` | National average price (cents/litre, rounded to 2dp) |
+
+**Why this exists:** 
+Direct aggregation over 4.37M records on every API request would be too slow for a real-time endpoint. This index acts as a materialized view, refreshed nightly by the Timer-triggered `daily-aggregator` at 03:00 UTC.
+
+**Consumers:** 
+`analytics_service.py` (primary read source for fuel data in the merged API response).
+
+---
+
+## `bluesky-cursors`
+
+**Purpose:** Internal crawler state store used exclusively by the Bluesky harvester Fission function. Tracks pagination cursors to avoid re-fetching already-ingested posts across timer invocations.
+
+**Key fields:** `cursor_state`, `last_seen_time`, `until`, `finished`.
+
+**Consumers:** Bluesky harvester only. Not read by the API layer or Jupyter frontend.
