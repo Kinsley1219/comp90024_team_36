@@ -18,6 +18,78 @@ The system collects data from three sources:
 
 The collected data is stored in Elasticsearch. Fission serverless functions are used for scheduled data ingestion, backend aggregation, and API access. Jupyter Notebook is used as the frontend analytics and visualisation interface.
 
+
+## Prerequisites
+
+To run or validate the deployed system, the following are required:
+
+- Access to the shared MRC/NeCTAR Kubernetes cluster
+- A valid kubeconfig file for the cluster
+- `kubectl`
+- Fission CLI
+- Python 3.9+
+- Jupyter Notebook
+- Access to the required Kubernetes Secrets in the cluster, especially `es-secret`
+
+Real credentials, kubeconfig files, and API passwords are not committed to this repository.
+
+
+## Quick Start: Run the Analytics Workflow
+
+The full system is deployed on the shared Kubernetes cluster. To run the final analytics workflow locally, first connect to the cluster using the provided kubeconfig.
+
+Check cluster access:
+
+```bash
+kubectl get nodes
+```
+
+Forward the Fission router for the backend analytics API:
+
+```bash
+kubectl port-forward service/router -n fission 8888:80
+```
+
+The final analytics endpoint is then available at:
+
+```text
+http://127.0.0.1:8888/api/v1/trends
+```
+
+Verify the API response:
+
+```bash
+curl http://127.0.0.1:8888/api/v1/trends
+```
+
+Open the Jupyter Notebook frontend:
+
+```text
+frontend/notebooks/Frontend_Team36.ipynb
+```
+
+Run the notebook cells to fetch the API response and generate the visualisations.
+
+For direct Elasticsearch and Kibana inspection, use:
+
+```bash
+kubectl port-forward service/elasticsearch-es-http -n elastic 9200:9200
+```
+
+```bash
+kubectl port-forward service/kibana-kb-http -n elastic 5601:5601
+```
+
+After port-forwarding, Elasticsearch and Kibana are available at:
+
+```text
+https://127.0.0.1:9200
+https://127.0.0.1:5601
+```
+
+Detailed deployment commands for each component are documented in the module-level README files listed in the Documentation Map.
+
+
 ## System Architecture
 
 The project is organised into five main layers:
@@ -89,6 +161,26 @@ Use this root README as the project entry point. Detailed deployment and impleme
 | Elasticsearch and Kibana | [database/README_Elastic.md](database/README_Elastic.md) |
 | Backend analytics API | [backend/README_Backend.md](backend/README_Backend.md) |
 | Jupyter Notebook frontend | [frontend/notebooks/Frontend_Team36.ipynb](frontend/notebooks/Frontend_Team36.ipynb) |
+
+
+## Deployment Summary
+
+The project is deployed on a shared MRC/NeCTAR Kubernetes cluster.
+
+High-level deployment workflow:
+
+1. Configure local Kubernetes access using the shared kubeconfig file.
+2. Deploy Elasticsearch and Kibana using ECK.
+3. Create the Python 3.9 Fission environment.
+4. Configure Kubernetes Secrets such as `es-secret`.
+5. Package crawler code and dependencies into Fission packages.
+6. Create Fission functions and attach timer or HTTP triggers.
+7. Validate ingestion using `fission fn test`, Elasticsearch count queries, and Kibana inspection.
+8. Expose backend API routes through the Fission router.
+9. Use Jupyter Notebook to consume the backend API and generate visualisations.
+
+Detailed deployment commands are kept in the module-level README files rather than duplicated here.
+
 
 ## Main Components
 
@@ -221,23 +313,6 @@ The notebook calls the backend analytics API and generates visualisations for:
 - platform comparison
 - fuel price and sentiment trend comparison
 
-## Deployment Summary
-
-The project is deployed on a shared MRC/NeCTAR Kubernetes cluster.
-
-High-level deployment workflow:
-
-1. Configure local Kubernetes access using the shared kubeconfig file.
-2. Deploy Elasticsearch and Kibana using ECK.
-3. Create the Python 3.9 Fission environment.
-4. Configure Kubernetes Secrets such as `es-secret`.
-5. Package crawler code and dependencies into Fission packages.
-6. Create Fission functions and attach timer or HTTP triggers.
-7. Validate ingestion using `fission fn test`, Elasticsearch count queries, and Kibana inspection.
-8. Expose backend API routes through the Fission router.
-9. Use Jupyter Notebook to consume the backend API and generate visualisations.
-
-Detailed deployment commands are kept in the module-level README files rather than duplicated here.
 
 ## Key Ports
 
@@ -266,6 +341,12 @@ The CI/CD pipeline supports code quality checks and partial deployment automatio
 
 Tests are stored in `test/`.
 
+To run the local test suite:
+
+```bash
+pytest test/ -v
+```
+
 Current test files include:
 
 - `test_basic.py`
@@ -290,7 +371,6 @@ Real credentials should not be committed to GitLab.
 The deployed functions read Elasticsearch credentials and API credentials from Kubernetes Secrets, mainly `es-secret`.
 
 Before updating a shared Kubernetes Secret, team members should inspect existing fields carefully. Recreating a shared secret can overwrite credentials required by other Fission functions.
-
 
 ## Project Status
 
