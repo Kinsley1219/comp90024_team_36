@@ -1,5 +1,11 @@
 # COMP90024 Team 36 - Fuel Price and Cost-of-Living Sentiment Analytics
 
+## Project Links
+
+GitLab Repository: https://gitlab.unimelb.edu.au/JUNYAOZ5/comp90024_team_36.git 
+
+YouTube Demonstration: https://youtu.be/jXyvtCNpm1c?si=aDljLsISkSJX92Db
+
 ## Project Overview
 
 This repository contains Team 36's COMP90024 Assignment 2 project. The project builds a cloud-native data collection and analytics system for analysing Australian fuel prices and cost-of-living sentiment.
@@ -11,16 +17,6 @@ The system collects data from three sources:
 - FuelWatch WA historical CSV fuel price reports
 
 The collected data is stored in Elasticsearch. Fission serverless functions are used for scheduled data ingestion, backend aggregation, and API access. Jupyter Notebook is used as the frontend analytics and visualisation interface.
-
-## Team Responsibilities
-
-| Member | Main Contribution |
-|---|---|
-| Xinyao Li | Designed and deployed the Bluesky Fission ingestion pipeline, implemented Elasticsearch integration and cursor tracking, validated ingestion workflows, and produced system architecture and deployment diagrams. |
-| Junyao Zhang | Initial Kubernetes cluster setup, kubeconfig sharing, Reddit Fission pipeline, Reddit realtime and historical ingestion |
-| Hanyue Li | Elasticsearch and Kibana deployment, storage optimisation, aggregation pipeline, backend analytics API |
-| Hongkun Zhang | FuelWatch Fission pipeline, official fuel price processing, Jupyter Notebook visualisation and automation |
-| Yichen Sun | GitLab CI/CD support, documentation/background support |
 
 ## System Architecture
 
@@ -295,11 +291,6 @@ The deployed functions read Elasticsearch credentials and API credentials from K
 
 Before updating a shared Kubernetes Secret, team members should inspect existing fields carefully. Recreating a shared secret can overwrite credentials required by other Fission functions.
 
-## Project Links
-
-GitLab Repository: https://gitlab.unimelb.edu.au/JUNYAOZ5/comp90024_team_36.git 
-
-YouTube Demonstration:  https://youtu.be/It4Hejc5Z8c?si=u53z3XJB4hKNyYt- 
 
 ## Project Status
 
